@@ -84,8 +84,8 @@
     "chai": "^6.2.2",
     "jsdoc-to-markdown": "^9.1.1",
     "mocha": "^11.7.6",
-    "rollup": "^4.62.2",
-    "sinon": "^22.0.0",
+    "rollup": "^4.62.3",
+    "sinon": "^22.1.0",
     "standard": "^17.1.2"
   },
   "standard": {
