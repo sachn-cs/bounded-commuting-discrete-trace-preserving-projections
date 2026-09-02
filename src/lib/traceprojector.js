@@ -182,11 +182,11 @@ export class Projector {
    * @param {number} tIdx
    * @return {number}
    */
-  projectH1 (u, point, tIdx) {
-    Projector.validatePoint(point)
-    this.validateTetIdx(tIdx)
-    return this.h1.project(u, point, tIdx, this.vertexData)
-  }
+projectH1 (u, point, tIdx) {
+     Projector.validatePoint(point)
+     this.validateTetIdx(tIdx)
+     return this.h1.project(u, point, tIdx)
+   }
 
   /**
    * H(curl) projection (l=1).

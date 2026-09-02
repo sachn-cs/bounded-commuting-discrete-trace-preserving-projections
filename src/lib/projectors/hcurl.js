@@ -4,7 +4,7 @@
  * Edge-based vector projection with boundary-aware tangential trace DoFs.
  */
 
-import { dot, subtract, numericalGradient } from '../utils.js'
+import { dot, subtract } from '../utils.js'
 import { lineQuadrature } from '../quadrature.js'
 
 /**
@@ -43,8 +43,6 @@ export class Hcurl {
       [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]
     ]
     const result = [0, 0, 0]
-    const samplePt = this.mesh.getTetrahedronBarycenter(tIdx)
-    const isScalar = typeof u(samplePt) === 'number'
 
     for (let e = 0; e < 6; e++) {
       const [i, j] = localEdges[e]
@@ -53,12 +51,7 @@ export class Hcurl {
       const eIdx = this.mesh.getEdgeIndex(eKey)
       const sigma = this.mesh.getTetEdgeSign(tIdx, e)
 
-      let coefficient
-      if (boundaryEdgeSet.has(eIdx)) {
-        coefficient = this.computeEdgeDof(u, eIdx) * sigma
-      } else {
-        coefficient = this.computeInteriorEdgeCoeff(u, tIdx, i, j, isScalar)
-      }
+      const coefficient = this.computeEdgeDof(u, eIdx) * sigma
 
       result[0] += coefficient * edgeBasis[e][0]
       result[1] += coefficient * edgeBasis[e][1]
@@ -100,29 +93,10 @@ export class Hcurl {
   }
 
   /**
-   * Computes the interior edge coefficient for H(curl) in local orientation.
-   * @param {function(!Array<number>): (number|!Array<number>)} u
-   * @param {number} tIdx
-   * @param {number} i
-   * @param {number} j
-   * @param {boolean} isScalar
-   * @return {number}
-   */
-  computeInteriorEdgeCoeff (u, tIdx, i, j, isScalar) {
-    const tet = this.mesh.getTetrahedra()[tIdx]
-    const mid = this.midpoint(tet[i], tet[j])
-    const edgeVec = subtract(
-      this.mesh.getVertices()[tet[j]],
-      this.mesh.getVertices()[tet[i]]
-    )
-    if (isScalar) {
-      return dot(numericalGradient(u, mid), edgeVec)
-    }
-    return dot(u(mid), edgeVec)
-  }
-
-  /**
    * Pi_ring^1: interior H(curl) projector with zero boundary trace.
+   *
+   * Uses the exact edge DoF ∫_e u·t ds on every interior edge, identical to
+   * the trace DoFs on boundary edges; boundary edges get zero coefficient.
    * @param {function(!Array<number>): (number|!Array<number>)} u
    * @param {!Array<number>} point
    * @param {number} tIdx
@@ -137,8 +111,6 @@ export class Hcurl {
       [0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]
     ]
     const result = [0, 0, 0]
-    const samplePt = this.mesh.getTetrahedronBarycenter(tIdx)
-    const isScalar = typeof u(samplePt) === 'number'
 
     for (let e = 0; e < 6; e++) {
       const [i, j] = localEdges[e]
@@ -148,7 +120,8 @@ export class Hcurl {
       if (boundaryEdgeSet.has(eIdx)) {
         continue
       }
-      const coefficient = this.computeInteriorEdgeCoeff(u, tIdx, i, j, isScalar)
+      const sigma = this.mesh.getTetEdgeSign(tIdx, e)
+      const coefficient = this.computeEdgeDof(u, eIdx) * sigma
       result[0] += coefficient * edgeBasis[e][0]
       result[1] += coefficient * edgeBasis[e][1]
       result[2] += coefficient * edgeBasis[e][2]
@@ -199,16 +172,5 @@ export class Hcurl {
     const b = e[1]
     const vc = this.mesh.getOriginalVertexCount()
     return a < b ? a * vc + b : b * vc + a
-  }
-
-  /**
-   * @param {number} vI
-   * @param {number} vJ
-   * @return {!Array<number>}
-   */
-  midpoint (vI, vJ) {
-    const a = this.mesh.getVertices()[vI]
-    const b = this.mesh.getVertices()[vJ]
-    return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]
   }
 }

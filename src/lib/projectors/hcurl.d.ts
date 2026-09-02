@@ -13,13 +13,6 @@ export class Hcurl {
     u: (point: number[]) => number | number[],
     eIdx: number,
   ): number;
-  computeInteriorEdgeCoeff(
-    u: (point: number[]) => number | number[],
-    tIdx: number,
-    i: number,
-    j: number,
-    isScalar: boolean,
-  ): number;
   projectRing(
     u: (point: number[]) => number | number[],
     point: number[],
