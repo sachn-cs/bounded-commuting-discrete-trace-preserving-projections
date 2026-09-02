@@ -2,7 +2,7 @@
  * Tetrahedral mesh data structure with topological connectivity, geometry,
  * and boundary extraction.
  *
- * This module provides the core Mesh class used throughout the BCDTPP library.
+ * This module provides the core Mesh class used throughout the TraceProjector library.
  * The Mesh is constructed once and treated as immutable for the duration of a
  * projection computation.  Mesh refinement operators (Alfeld split,
  * Worsey-Farin split) live in a separate {@link MeshRefinement} class.

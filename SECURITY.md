@@ -19,5 +19,5 @@ We take all security reports seriously and will respond as quickly as possible.
 
 ## Security Best Practices for Consumers
 
-- This library performs numerical computation on user-provided mesh data. Always validate inputs before passing them to `Mesh` or `Bcdtpp` constructors.
+- This library performs numerical computation on user-provided mesh data. Always validate inputs before passing them to `Mesh` or `TraceProjector` constructors.
 - Do not execute untrusted function inputs directly through projection methods without sandboxing.

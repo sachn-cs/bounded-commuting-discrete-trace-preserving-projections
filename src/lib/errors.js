@@ -1,5 +1,5 @@
 /**
- * Structured error types for the BCDTPP library.
+ * Structured error types for the TraceProjector library.
  */
 
 /**

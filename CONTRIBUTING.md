@@ -1,4 +1,4 @@
-# Contributing to Bcdtpp
+# Contributing to TraceProjector
 
 Thank you for your interest in contributing! This document outlines the workflow for proposing changes, reporting issues, and submitting pull requests.
 
@@ -58,8 +58,8 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) for commi
 ```bash
 git commit -m "feat(mesh): add anisotropic mesh support"
 git commit -m "fix(point-locator): correct barycentric coordinate calculation"
-git commit -m "docs: update API reference for Bcdtpp class"
-git commit -m "test(bcdtpp): add edge cases for degenerate tetrahedra"
+git commit -m "docs: update API reference for TraceProjector class"
+git commit -m "test(traceprojector): add edge cases for degenerate tetrahedra"
 git commit -m "chore: update rollup to v4"
 ```
 
@@ -69,7 +69,7 @@ Optional scope should reference the module affected:
 
 - `mesh` - Mesh topology and geometry
 - `whitney` - Whitney forms and barycentric utilities
-- `bcdtpp` - Main projection class
+- `traceprojector` - Main projection class
 - `point-locator` - AABB tree point location
 - `quadrature` - Gaussian quadrature
 - `math-utils` - Linear algebra primitives

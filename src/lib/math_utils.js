@@ -1,7 +1,7 @@
 /**
  * Pure JavaScript linear algebra and vector utilities.
  *
- * This module replaces the mathjs dependency for the core BCDTPP library,
+ * This module replaces the mathjs dependency for the core TraceProjector library,
  * ensuring a pure JavaScript implementation with no external runtime math
  * dependencies.
  */

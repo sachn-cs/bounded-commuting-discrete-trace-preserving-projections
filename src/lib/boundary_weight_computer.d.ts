@@ -2,7 +2,7 @@ import type {Mesh} from './mesh.js';
 import type {MeshRefinement} from './mesh_refinement.js';
 
 /**
- * Boundary weight computation for BCDTPP projections.
+ * Boundary weight computation for TraceProjector projections.
  *
  * Computes vertex patch weights, edge tangents/lengths, and face normals/areas
  * used by trace-preserving boundary DoFs.

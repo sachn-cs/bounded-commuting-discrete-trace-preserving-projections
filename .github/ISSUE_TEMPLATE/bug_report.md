@@ -12,7 +12,7 @@ A clear and concise description of what the bug is.
 
 **To Reproduce**
 Steps to reproduce the behavior:
-1. Install the package (`npm install bcdtpp` or from source)
+1. Install the package (`npm install traceprojector` or from source)
 2. Run the following code:
 3. Observe the error
 
