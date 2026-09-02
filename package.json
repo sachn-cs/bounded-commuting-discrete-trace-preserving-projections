@@ -69,7 +69,7 @@
     "test": "mocha tests/**/*.test.js",
     "test:watch": "mocha tests/**/*.test.js --watch",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm test",
-    "docs": "jsdoc2md --files src/lib/**/*.js > docs/api.md",
+    "docs": "jsdoc2md --files \"src/lib/*.js\" \"src/lib/projectors/*.js\" > docs/api.md",
     "build": "rollup -c rollup.dist.config.js",
     "build:full": "npm run build && npm run docs"
   },

@@ -19,7 +19,7 @@ Thrown by `Mesh` when input data is geometrically or topologically invalid.
 
 ## ProjectionError
 
-Thrown by `Bcdtpp` and projector classes when arguments are invalid or operations cannot proceed.
+Thrown by `TraceProjector` and projector classes when arguments are invalid or operations cannot proceed.
 
 | Condition | Message pattern |
 |-----------|-----------------|

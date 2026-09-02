@@ -8,7 +8,7 @@ This project maintains high test coverage (currently >98% statements, >93% branc
 
 | File | Scope |
 |------|-------|
-| `bcdtpp.test.js` | Core projections (H1, Hcurl, Hdiv, L2, point location) |
+| `traceprojector.test.js` | Core projections (H1, Hcurl, Hdiv, L2, point location) |
 | `coverage.test.js` | Multi-tet meshes, mesh validation, bubble projection, boundary weight faults |
 | `convergence.test.js` | Convergence rates on refined cube meshes |
 | `interior_extension.test.js` | Ring projector, extension operator, decomposition properties |

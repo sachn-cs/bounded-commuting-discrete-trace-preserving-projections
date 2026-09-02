@@ -4,7 +4,7 @@
 
 ```
 src/lib/
-  bcdtpp.js                   — Main API: Bcdtpp class
+  traceprojector.js           — Main API: TraceProjector class
   mesh.js                     — Tetrahedral mesh topology, geometry, adjacency
   whitney.js                  — Barycentric coords, Whitney edge/face basis
   quadrature.js               — Gaussian quadrature on triangles, tetrahedra, lines
@@ -35,7 +35,7 @@ Mesh (vertices, tets)
     +---> Whitney (barycentric coords, basis)
     |         |
     |         v
-    |     Bcdtpp (API facade)
+    |     TraceProjector (API facade)
     |         |
     |         +---> BoundaryWeightComputer
     |         |         +---> MeshRefinement (Alfeld / Worsey-Farin)
@@ -69,5 +69,5 @@ project(u, point, tIdx, boundaryFaceSet) -> value
 1. **Pure ES modules**: No CommonJS in source; bundlers handle multi-format output.
 2. **Zero external runtime dependencies**: All linear algebra is native JavaScript.
 3. **Immutable mesh inputs**: `Mesh` validates and freezes topology at construction.
-4. **Lazy caching**: `Whitney` caches per-tet barycentric gradients; `Bcdtpp` caches boundary weights on demand.
+4. **Lazy caching**: `Whitney` caches per-tet barycentric gradients; `TraceProjector` caches boundary weights on demand.
 5. **Warning instead of throwing for local failures**: `BoundaryWeightComputer` and `HigherOrderProjection` warn on singular matrices so that a single bad element does not crash the entire mesh projection.

@@ -36,7 +36,7 @@ export class TraceProjector {
   #whitney
   /** @type {number} */
   #quadratureOrder
-  /** @type {(msg: string) => void} */
+  /** @type {function(string): void} */
   #onWarning
   /** @type {PointLocator|null} */
   #pointLocator

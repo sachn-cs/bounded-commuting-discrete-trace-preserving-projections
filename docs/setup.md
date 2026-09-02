@@ -10,7 +10,7 @@
 ### From npm (when published)
 
 ```bash
-npm install bcdtpp
+npm install traceprojector
 ```
 
 ### From source
@@ -34,25 +34,25 @@ You should see all tests pass (166 tests as of v0.1.0).
 ### ESM (modern bundlers, Node.js)
 
 ```javascript
-import { Mesh, Whitney, Bcdtpp } from 'bcdtpp'
+import { Mesh, Whitney, TraceProjector } from 'traceprojector'
 
 const mesh = new Mesh(vertices, tetrahedra)
 const whitney = new Whitney(mesh)
-const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
+const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
 ```
 
 ### CommonJS (legacy Node.js)
 
 ```javascript
-const { Mesh, Whitney, Bcdtpp } = require('bcdtpp')
+const { Mesh, Whitney, TraceProjector } = require('traceprojector')
 ```
 
 ### Browser (UMD via CDN)
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/bcdtpp/dist/bcdtpp.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/traceprojector/dist/traceprojector.umd.js"></script>
 <script>
-  const { Mesh, Whitney, Bcdtpp } = window.bcdtpp;
+  const { Mesh, Whitney, TraceProjector } = window.TraceProjector;
 </script>
 ```
 

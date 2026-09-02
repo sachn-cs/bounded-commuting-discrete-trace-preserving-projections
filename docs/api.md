@@ -1,558 +1,722 @@
-# BCDTPP API Reference
-
-Bounded, Commuting, Discrete-trace Preserving Projections on simplicial meshes.
-
-## Table of Contents
-
-- [Bcdtpp](#bcdtpp) — Main entry point
-- [Mesh](#mesh) — Tetrahedral mesh data structure
-- [Whitney](#whitney) — Barycentric coordinates and Whitney basis functions
-- [BoundaryWeightComputer](#boundaryweightcomputer) — Boundary patch weights
-- [HigherOrderProjection](#higherorderprojection) — Higher-order projection framework
-- [LocalSolver](#localsolver) — Surface stiffness assembly and constrained solve
-- [MeshRefinement](#meshrefinement) — Alfeld and Worsey-Farin splits
-- [PointLocator](#pointlocator) — AABB tree point-in-tet queries
-- [H1Projector](#h1projector) — H¹ (l=0) vertex-based projector
-- [HcurlProjector](#hcurlprojector) — H(curl) (l=1) edge-based projector
-- [HdivProjector](#hdivprojector) — H(div) (l=2) face-based projector
-- [L2Projector](#l2projector) — L² (l=3) cell-based projector
-- [Math Utilities](#math-utilities) — Pure JS linear algebra and vector functions
-- [Error Classes](#error-classes)
-
----
-
-## Bcdtpp
-
-Main entry point implementing the global de Rham projection operator Πˡ.
-
-```js
-import { Bcdtpp } from 'bcdtpp/src/lib/bcdtpp.js'
-```
-
-### Constructor
-
-```js
-new Bcdtpp(mesh, whitney, options?)
-```
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `mesh` | `Mesh` | — | Tetrahedral mesh. |
-| `whitney` | `Whitney` | — | Whitney basis instance. |
-| `options.quadratureOrder` | `number` | `3` | Gaussian quadrature order for integrations. |
-| `options.onWarning` | `(ctx) => void` | `console.warn` | Callback for local projection failures. |
-
-Validates that the mesh contains no degenerate (zero-volume) tetrahedra.
-
-### Methods
-
-#### `buildPointLocator()`
-
-Builds an AABB tree for O(log N) point-in-tetrahedron queries. Called automatically by `projectAtPoint` if not already built.
-
-#### `computeBoundaryWeights()`
-
-Computes boundary patch weights (§6.3.1). Triggers a Worsey-Farin split if the mesh lacks face barycenter vertices. Must be called before `projectH1`, `projectHcurl`, or `projectHdiv`.
-
-#### `project(u, point, tIdx, l, p?)`
-
-Global projector Πˡ implementing the decomposition formula:
-
-```
-Πˡ = Π_partialˡ + Π_ringˡ (I − Π_partialˡ)
-```
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `u` | `(pt) => number \| Array<number>` | Input function (scalar for l=0,3; vector for l=1,2). |
-| `point` | `[x, y, z]` | Evaluation point inside the tetrahedron. |
-| `tIdx` | `number` | Tetrahedron index. |
-| `l` | `number` | Form degree: 0 (H¹), 1 (H(curl)), 2 (H(div)), 3 (L²). |
-| `p` | `number` | Polynomial degree (default 0). |
-
-Returns `number` (l=0,3) or `Array<number>` (l=1,2).
-
-#### `projectAtPoint(u, point, l?, p?)`
-
-Convenience wrapper that finds the containing tetrahedron via the AABB tree, then projects. Auto-builds the point locator on first call.
-
-Returns `{ value, tIdx, bary }` where `value` is the projected value and `tIdx`/`bary` identify the containing tetrahedron.
-
-#### `projectHp(u, point, tIdx, l, p)`
-
-Higher-order projection for form degree l and polynomial degree p ≥ 1. Delegates to the specialized `HigherOrderProjection` instance.
-
-#### `projectH1(u, point, tIdx)` / `projectHcurl(u, point, tIdx)` / `projectHdiv(u, point, tIdx)` / `projectL2(u, tIdx)`
-
-Lowest-order (p=0) projections for each form degree. `projectH1`, `projectHcurl`, and `projectHdiv` require `computeBoundaryWeights()` to have been called.
-
-#### `projectRing(u, point, tIdx, l)` / `extendBoundary(boundaryData, point, tIdx, l)` / `projectPartial(u, point, tIdx, l)`
-
-Decomposition components: interior projector, discrete extension operator, and boundary correction part.
-
-#### `extractBoundaryDofs(u, l)`
-
-Extracts boundary degrees of freedom for form degree l.
-
-Returns `Map<number, number>` mapping boundary entity indices to coefficient values.
-
-#### `quadratureOrder` (getter)
-
-Returns the quadrature order used for integrations.
-
----
-
-## Mesh
-
-Tetrahedral mesh data structure with topological connectivity, geometry, and boundary extraction.
-
-```js
-import { Mesh } from 'bcdtpp/src/lib/mesh.js'
-```
-
-### Constructor
-
-```js
-new Mesh(vertices, tetrahedra)
-```
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `vertices` | `Array<[x, y, z]>` | Vertex coordinates. |
-| `tetrahedra` | `Array<[i0, i1, i2, i3]>` | Tetrahedra as vertex index arrays. |
-
-Validates orientation (positive signed volume), bounds, and uniqueness. Throws `MeshValidationError` on invalid input.
-
-### Topology Fields
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `vertices` | `Array<Array<number>>` | Vertex coordinates. |
-| `tetrahedra` | `Array<Array<number>>` | Tetrahedra as vertex index arrays. |
-| `originalVertexCount` | `number` | Vertex count before refinement. |
-| `vertexCount` | `number` | Current vertex count. |
-| `tetrahedronCount` | `number` | Number of tetrahedra. |
-| `faces` | `Array<Array<number>>` | All faces as vertex index arrays. |
-| `edges` | `Array<Array<number>>` | All edges as vertex index pairs. |
-| `boundaryFaces` | `Array<number>` | Indices of boundary faces. |
-| `boundaryEdges` | `Array<number>` | Indices of boundary edges. |
-| `boundaryNodes` | `Set<number>` | Boundary vertex indices. |
-| `faceToTets` | `Array<Array<number>>` | Face → incident tetrahedra adjacency. |
-| `edgeToFaces` | `Array<Array<number>>` | Edge → incident faces adjacency. |
-| `vertexToTets` | `Array<Array<number>>` | Vertex → incident tetrahedra. |
-| `vertexToBoundaryFaces` | `Array<Array<number>>` | Vertex → incident boundary faces. |
-| `vertexToEdges` | `Array<Array<number>>` | Vertex → incident edges. |
-
-### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `getFaceArea(fIdx)` | `number` | Geometric area of a face. |
-| `getFaceOutwardNormal(fIdx)` | `[x, y, z]` | Outward-pointing unit normal for a boundary face. |
-| `getEdgeIndex(edgeKey)` | `number \| undefined` | Global edge index for an edge key. |
-| `getFaceIndex(faceKey)` | `number \| undefined` | Global face index for a face key. |
-| `getTetEdgeSign(tIdx, e)` | `number` | Edge orientation sign (±1) for local edge e (0–5). |
-| `getTetFaceSign(tIdx, f)` | `number` | Face orientation sign (±1) for local face f (0–3). |
-| `getFaceBarycenter(fIdx)` | `[x, y, z]` | Cached centroid of a triangle face. |
-| `getTetrahedronBarycenter(tIdx)` | `[x, y, z]` | Cached centroid of a tetrahedron. |
-| `getStar(vIdx)` | `Array<number>` | Tetrahedra incident on a vertex. |
-| `getBoundaryStar(vIdx)` | `Array<number>` | Boundary faces incident on a vertex. |
-| `getEdgeStar(vIdx)` | `Array<number>` | Edges incident on a vertex. |
-| `getVolume(tIdx)` | `number` | Cached volume of a tetrahedron. |
-| `getTetrahedronFaces(tIdx)` | `Array<number>` | Four global face indices (opposite-vertex convention). |
-| `getVertices()` | `Array<Array<number>>` | All vertex coordinates. |
-| `getTetrahedra()` | `Array<Array<number>>` | All tetrahedra. |
-| `getFaces()` | `Array<Array<number>>` | All faces. |
-| `getEdges()` | `Array<Array<number>>` | All edges. |
-| `getBoundaryNodes()` | `Set<number>` | Boundary node indices. |
-| `getBoundaryFaces()` | `Array<number>` | Boundary face indices. |
-| `getBoundaryEdges()` | `Array<number>` | Boundary edge indices. |
-| `getOriginalVertexCount()` | `number` | Original vertex count before refinement. |
-
-### Static Methods
-
-#### `Mesh.computeEdgeKey(a, b, vertexCount)`
-
-Returns a canonical integer key for an edge. Safe for `vertexCount < 2²⁶`.
-
----
-
-## Whitney
-
-Barycentric coordinate computation and Whitney finite-element basis functions.
-
-```js
-import { Whitney } from 'bcdtpp/src/lib/whitney.js'
-```
-
-### Constructor
-
-```js
-new Whitney(mesh)
-```
-
-Precomputes per-tet edge matrices, inverses, determinants, and barycentric gradients.
-
-### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `getBarycentric(tIdx, point)` | `[λ0, λ1, λ2, λ3]` | Barycentric coordinates of a point w.r.t. a tetrahedron. |
-| `getGradBarycentric(tIdx)` | `Array<[x,y,z]>` | Gradients of the four barycentric coordinate functions. |
-| `getEdgeBasis(tIdx, bary)` | `Array<[x,y,z]>` | Six Nédélec (Whitney 1-form) edge basis vectors in order `[0,1],[0,2],[0,3],[1,2],[1,3],[2,3]`. |
-| `getFaceBasis(tIdx, bary)` | `Array<[x,y,z]>` | Four Raviart-Thomas (Whitney 2-form) face basis vectors indexed by opposite vertex 0–3. |
-
----
-
-## BoundaryWeightComputer
-
-Computes boundary patch weights used by trace-preserving projection operators.
-
-```js
-import { BoundaryWeightComputer } from 'bcdtpp/src/lib/boundary_weight_computer.js'
-```
-
-### Constructor
-
-```js
-new BoundaryWeightComputer(mesh, meshRefinement, onWarning?)
-```
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `mesh` | `Mesh` | — | Tetrahedral mesh. |
-| `meshRefinement` | `MeshRefinement` | — | Mesh refinement instance. |
-| `onWarning` | `(ctx) => void` | `console.warn` | Callback for local computation failures. |
-
-### Methods
-
-#### `compute()`
-
-Returns:
-```js
-{
-  vertexBoundaryData: Map<number, { nodeMap, invNodeMap, psi }>,
-  edgeBoundaryData:  Map<number, { v0, v1, tangent, length }>,
-  faceBoundaryData:  Map<number, { normal, area }>
-}
-```
-
----
-
-## HigherOrderProjection
-
-Higher-order projection framework (§7). Builds projections for p ≥ 1 from lowest-order via bubble corrections on Alfeld-split patches.
-
-```js
-import { HigherOrderProjection } from 'bcdtpp/src/lib/higher_order_projection.js'
-```
-
-### Constructor
-
-```js
-new HigherOrderProjection(mesh, whitney, quadratureOrder?, onWarning?)
-```
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `mesh` | `Mesh` | — | Tetrahedral mesh. |
-| `whitney` | `Whitney` | — | Whitney basis instance. |
-| `quadratureOrder` | `number` | `3` | Quadrature order. |
-| `onWarning` | `(ctx) => void` | `console.warn` | Callback for projection failures. |
-
-### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `evaluateBubbleBasis(bary, p)` | `Array<number>` | Evaluates scalar bubble basis at barycentric coordinates for degree p. |
-| `assembleBubbleMass(tIdx, p)` | `Array<Array<number>>` | Assembles local mass matrix for the bubble space. |
-| `assembleBubbleRhs(tIdx, p, residualFn)` | `Array<number>` | Assembles RHS for bubble projection. |
-| `solveBubbleProjection(tIdx, p, residualFn)` | `Array<number> \| null` | Solves for bubble coefficients. Returns null if p < 4 or solve fails. |
-| `evaluateBubble(tIdx, p, coeffs, point)` | `number` | Evaluates bubble correction at a point. |
-| `evaluateBernsteinBasis(bary, p)` | `Array<number>` | Evaluates P^p Bernstein basis at barycentric coordinates. |
-| `solveL2Projection(tIdx, p, u)` | `Array<number>` | Solves L2 projection of u onto P^p(T). Returns Bernstein coefficients. |
-| `evaluateL2Projection(coeffs, bary, p)` | `number` | Evaluates L2 projection at a point. |
-
----
+## Classes
+
+<dl>
+<dt><a href="#BoundaryWeightComputer">BoundaryWeightComputer</a></dt>
+<dd><p>Computes boundary patch weights used by the trace-preserving projection
+operators.  For each boundary vertex, it assembles a surface-patch stiffness
+matrix on the Alfeld-split star, solves a constrained Laplace problem to
+obtain the weight functions psi, and collects edge tangents and face normals.</p>
+<p>Local failures (e.g. degenerate patches) emit warnings rather than throwing
+so that a single bad element does not halt the entire mesh projection.</p>
+</dd>
+<dt><a href="#MeshValidationError">MeshValidationError</a></dt>
+<dd><p>Thrown when mesh input data fails validation.</p>
+</dd>
+<dt><a href="#ProjectionError">ProjectionError</a></dt>
+<dd><p>Thrown when a projection cannot be computed.</p>
+</dd>
+<dt><a href="#SingularMatrixError">SingularMatrixError</a></dt>
+<dd><p>Thrown when a linear system is singular or numerically ill-conditioned.</p>
+</dd>
+<dt><a href="#HigherOrderProjection">HigherOrderProjection</a></dt>
+<dd><p>Higher-order projection framework implementing Section 7 of the paper.</p>
+<p>For polynomial degree p &gt;= 4 on H^1 (l=0), the projection Pi^l_p is built
+from the lowest-order projection by adding bubble corrections on
+Alfeld-split patches.  For L2 (l=3) with p &gt;= 1, a Bernstein-basis
+L2 projection is used instead.</p>
+<p>For p = 1, 2, 3 on H^1 the bubble space is empty (the product
+b = lambda_0 * lambda_1 * lambda_2 * lambda_3 already has degree 4),
+so projectHp returns the lowest-order projection without enrichment.</p>
+</dd>
+<dt><a href="#LocalSolver">LocalSolver</a></dt>
+<dd><p>Static utility for assembling surface-patch stiffness matrices and solving
+constrained linear systems during boundary weight computation.</p>
+<p>The constraint enforcement uses a simple row-replacement approach that works
+well for small patch sizes (valence &lt; 20).  For production-scale patches a
+Lagrange-multiplier or projected-gradient method is preferable.</p>
+</dd>
+<dt><a href="#MeshRefinement">MeshRefinement</a></dt>
+<dd><p>Mesh refinement operators implementing Alfeld face splitting (Section 6.1.3)
+and Worsey-Farin tetrahedron splitting (Section 6.1.4).</p>
+<p>This class mutates the underlying Mesh by appending barycenter vertices.
+It stores the refinement data (sub-triangles, sub-tetrahedra) separately so
+that Mesh remains a pure data structure.</p>
+<p>Both splits are idempotent: calling them more than once is a no-op.</p>
+</dd>
+<dt><a href="#Mesh">Mesh</a></dt>
+<dd><p>Tetrahedral mesh data structure with topological connectivity and boundary
+extraction.  This class is intentionally a <em>pure data structure</em>; mesh
+refinement operators (Alfeld split, Worsey-Farin split) live in
+<a href="#MeshRefinement">MeshRefinement</a>.</p>
+</dd>
+<dt><a href="#PointLocator">PointLocator</a></dt>
+<dd><p>Axis-aligned bounding box (AABB) tree for O(log N) point-in-tetrahedron
+queries.</p>
+<p>The tree is built by recursively splitting tetrahedra along the longest
+axis at the median centroid, guaranteeing a balanced tree.  Leaf nodes
+store up to maxLeafSize tetrahedra and are tested exhaustively.</p>
+</dd>
+<dt><a href="#TraceProjector">TraceProjector</a></dt>
+<dd><p>TRACEPROJECTOR: Bounded, Commuting, Discrete-trace Preserving Projections.</p>
+<p>Implements the de Rham projection operators Pi^l for l = 0,1,2,3 on
+tetrahedral meshes with boundary-aware trace preservation.</p>
+<p><strong>Coupling note:</strong> This class accesses mesh data through the <a href="#Mesh">Mesh</a>
+public API (getters for vertices, faces, edges, boundary flags, orientation
+signs, etc.).  Swapping in a different mesh implementation requires only that
+the new class implements the same getter interface.</p>
+</dd>
+<dt><a href="#Whitney">Whitney</a></dt>
+<dd><p>Barycentric coordinate computation and Whitney finite-element basis
+functions on a tetrahedral mesh.</p>
+<p>Provides the Whitney 1-forms (Nedelec edge basis) and 2-forms
+(Raviart-Thomas face basis) used by the H(curl) and H(div) projectors.
+All per-tet geometry (edge matrix, inverse, gradients) is cached at
+construction time for efficient repeated evaluation.</p>
+</dd>
+<dt><a href="#H1Projector">H1Projector</a></dt>
+<dd><p>Lowest-order H1 (l=0) vertex-based projector implementing Pi^0.</p>
+<p>Projects scalar functions onto the space of continuous piecewise-linear
+functions (P1 Lagrange) on a tetrahedral mesh.  Boundary vertices use
+weighted surface-patch integrals (computed by <a href="#BoundaryWeightComputer">BoundaryWeightComputer</a>)
+to ensure trace preservation.  Interior vertices use nodal interpolation.</p>
+</dd>
+<dt><a href="#HcurlProjector">HcurlProjector</a></dt>
+<dd><p>Lowest-order H(curl) (l=1) edge-based projector implementing Pi^1.</p>
+<p>Projects vector functions onto the Nédélec first-kind (Whitney 1-form)
+space.  Boundary edges use exact tangential-trace degrees of freedom
+(∫_e u·t ds); interior edges use midpoint evaluation of the tangential
+component.</p>
+</dd>
+<dt><a href="#HdivProjector">HdivProjector</a></dt>
+<dd><p>Lowest-order H(div) (l=2) face-based projector implementing Pi^2.</p>
+<p>Projects vector functions onto the Raviart-Thomas (Whitney 2-form) space.
+Boundary faces use exact normal-flux degrees of freedom (∫_f u·n dA);
+interior faces use barycenter evaluation of the normal component.</p>
+</dd>
+<dt><a href="#L2Projector">L2Projector</a></dt>
+<dd><p>Lowest-order L2 (l=3) cell-based projector implementing Pi^3.</p>
+<p>Projects scalar functions onto the space of piecewise constants (P0)
+on a tetrahedral mesh.  The projection is simply the volume-weighted
+average of the function over each tetrahedron.</p>
+</dd>
+</dl>
+
+## Constants
+
+<dl>
+<dt><a href="#EPSILON">EPSILON</a> : <code>number</code></dt>
+<dd></dd>
+<dt><a href="#Maximum">Maximum</a> : <code>number</code></dt>
+<dd><p>n for which n! fits in a JavaScript Number without overflowing.</p>
+</dd>
+</dl>
+
+## Functions
+
+<dl>
+<dt><a href="#computeL2ErrorScalar">computeL2ErrorScalar(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the L2 error between an exact function and its projection.</p>
+<p>err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx</p>
+</dd>
+<dt><a href="#computeL2ErrorVector">computeL2ErrorVector(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the L2 error for a vector-valued projection.</p>
+<p>err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx</p>
+</dd>
+<dt><a href="#computeH1SemiError">computeH1SemiError(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the H1 semi-norm error (L2 error of the gradient) for scalar projections.
+Uses numerical differentiation of the exact function for comparison.</p>
+<p>err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx</p>
+</dd>
+<dt><a href="#estimateMeshSize">estimateMeshSize(mesh)</a> ⇒ <code>number</code></dt>
+<dd><p>Estimates the mesh size h as the cube root of the average tetrahedron volume
+scaled to unit volume, or more simply the maximum edge length.</p>
+</dd>
+<dt><a href="#computeRate">computeRate(err1, err2, h1, h2)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the observed convergence rate between two successive error measurements.</p>
+<p>rate = log(err_1 / err_2) / log(h_1 / h_2)</p>
+</dd>
+<dt><a href="#runConvergenceStudy">runConvergenceStudy(meshes, config)</a> ⇒ <code>Array.&lt;{h: number, l2Err: number, h1Err: (number|undefined), rateL2: (number|undefined), rateH1: (number|undefined)}&gt;</code></dt>
+<dd><p>Runs a convergence study on a sequence of meshes.</p>
+</dd>
+<dt><a href="#dot">dot(a, b)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the dot product of two 3D vectors.</p>
+</dd>
+<dt><a href="#tetDeterminant">tetDeterminant(v0, v1, v2, v3)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the determinant (scalar triple product) of the tetrahedron with
+vertices v0, v1, v2, v3.  The absolute value divided by 6 equals the volume.</p>
+</dd>
+<dt><a href="#tetVolume">tetVolume(v0, v1, v2, v3)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the geometric volume of a tetrahedron.</p>
+</dd>
+<dt><a href="#cross">cross(a, b)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Computes the cross product of two 3D vectors.</p>
+</dd>
+<dt><a href="#subtract">subtract(a, b)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Subtracts vector b from vector a.</p>
+</dd>
+<dt><a href="#norm">norm(v)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the Euclidean norm of a vector.</p>
+</dd>
+<dt><a href="#subtractInto">subtractInto(a, b, out)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>In-place vector subtraction: out = a - b.</p>
+</dd>
+<dt><a href="#crossInto">crossInto(a, b, out)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>In-place cross product: out = a x b.</p>
+</dd>
+<dt><a href="#triangleArea">triangleArea(p1, p2, p3)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the area of a triangle given its three vertices.</p>
+</dd>
+<dt><a href="#zeros">zeros(rows, cols)</a> ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code></dt>
+<dd><p>Creates a zero-initialized dense matrix.</p>
+</dd>
+<dt><a href="#infinityNorm">infinityNorm(a)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the infinity norm (maximum absolute row sum) of a matrix.</p>
+</dd>
+<dt><a href="#luSolve">luSolve(a, b)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Solves Ax = b using Gaussian elimination with partial pivoting and row
+equilibration (pivot scaling).</p>
+<p>The matrix is scaled so that each row has max-norm 1 before elimination,
+reducing the risk of false singularity claims on poorly scaled systems.</p>
+</dd>
+<dt><a href="#inverse3x3">inverse3x3(m)</a> ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code></dt>
+<dd><p>Computes the inverse of a 3x3 matrix.</p>
+</dd>
+<dt><a href="#solve3x3">solve3x3(a, b)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Solves a 3x3 linear system Ax = b using Cramer&#39;s rule.</p>
+</dd>
+<dt><a href="#factorial">factorial(n)</a> ⇒ <code>number</code></dt>
+<dd><p>Computes the factorial n!.</p>
+</dd>
+<dt><a href="#numericalGradient">numericalGradient(u, pt, [h])</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Numerical gradient of a scalar function using central differences.</p>
+</dd>
+<dt><a href="#generateUnitCubeMesh">generateUnitCubeMesh(n)</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
+<dd><p>Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
+Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
+the body diagonal from (0,0,0) to (1,1,1).</p>
+</dd>
+<dt><a href="#generateSingleTetMesh">generateSingleTetMesh()</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
+<dd><p>Generates a single reference tetrahedron mesh.</p>
+</dd>
+<dt><a href="#sort3">sort3(a, b, c)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Sorts three numbers in ascending order.</p>
+</dd>
+<dt><a href="#triangleQuadrature">triangleQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns quadrature points and weights on the reference triangle.</p>
+<p>Note: order 3 contains a negative weight (-9/16). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.</p>
+</dd>
+<dt><a href="#tetrahedronQuadrature">tetrahedronQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns quadrature points and weights on the reference tetrahedron.</p>
+<p>Note: order 3 contains a negative weight (-4/5). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.</p>
+</dd>
+<dt><a href="#integrateTriangle">integrateTriangle(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates a scalar function over a triangle using quadrature.</p>
+</dd>
+<dt><a href="#barycentricToCartesian">barycentricToCartesian(vertices, bary)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Maps barycentric coordinates to a Cartesian point.</p>
+</dd>
+<dt><a href="#lineQuadrature">lineQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns quadrature points and weights on the reference interval [0, 1].</p>
+</dd>
+<dt><a href="#compositeTetrahedronQuadrature">compositeTetrahedronQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns a composite quadrature rule by subdividing the reference tetrahedron
+into 4 sub-tetrahedra via the centroid and applying the base rule on each.
+This increases the number of quadrature points, ensuring the mass matrix
+for polynomial spaces up to degree 3 remains full-rank.</p>
+</dd>
+<dt><a href="#integrateTetrahedron">integrateTetrahedron(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates a scalar function over a tetrahedron using quadrature.</p>
+</dd>
+</dl>
+
+<a name="LocalSolver"></a>
 
 ## LocalSolver
+Static utility for assembling surface-patch stiffness matrices and solving
+constrained linear systems during boundary weight computation.
 
-Static utility for surface stiffness assembly and constrained linear systems.
+The constraint enforcement uses a simple row-replacement approach that works
+well for small patch sizes (valence < 20).  For production-scale patches a
+Lagrange-multiplier or projected-gradient method is preferable.
 
-```js
-import { LocalSolver } from 'bcdtpp/src/lib/local_solver.js'
-```
+**Kind**: global class  
 
-### Static Methods
+* [LocalSolver](#LocalSolver)
+    * [.assembleSurfaceStiffness(vertices, triangles)](#LocalSolver.assembleSurfaceStiffness) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
+    * [.solveWithConstraint(K, b, [onWarning])](#LocalSolver.solveWithConstraint) ⇒ <code>Array.&lt;number&gt;</code>
 
-#### `LocalSolver.assembleSurfaceStiffness(vertices, triangles)`
+<a name="LocalSolver.assembleSurfaceStiffness"></a>
 
-Assembles the surface stiffness matrix for −Δ_Γ.
+### LocalSolver.assembleSurfaceStiffness(vertices, triangles) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
+Assembles the surface stiffness matrix for -Delta_Gamma.
+
+**Kind**: static method of [<code>LocalSolver</code>](#LocalSolver)  
+
+| Param | Type |
+| --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| triangles | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+
+<a name="LocalSolver.solveWithConstraint"></a>
+
+### LocalSolver.solveWithConstraint(K, b, [onWarning]) ⇒ <code>Array.&lt;number&gt;</code>
+Solves K x = b with a mean-zero constraint sum(x) = 0.
+
+This implementation enforces the constraint by replacing the last row of K
+with ones and setting the last entry of b to zero. This is a simple
+textbook approach that works well for small patch sizes (valence < 20).
+It destroys symmetry and can degrade conditioning for larger systems; for
+production-scale patches a Lagrange-multiplier or projected-gradient method
+is preferable.
+
+**Kind**: static method of [<code>LocalSolver</code>](#LocalSolver)  
 
 | Param | Type | Description |
-|-------|------|-------------|
-| `vertices` | `Array<Array<number>>` | Vertex coordinates. |
-| `triangles` | `Array<Array<number>>` | Triangle connectivity. |
+| --- | --- | --- |
+| K | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> |  |
+| b | <code>Array.&lt;number&gt;</code> |  |
+| [onWarning] | <code>function</code> | Callback invoked with a warning context   object when the matrix is ill-conditioned. |
 
-Returns `Array<Array<number>>` — the N×N stiffness matrix.
+<a name="EPSILON"></a>
 
-#### `LocalSolver.solveWithConstraint(K, b, onWarning?)`
+## EPSILON : <code>number</code>
+**Kind**: global constant  
+<a name="Maximum"></a>
 
-Solves Kx = b with a mean-zero constraint Σx = 0. Uses Gaussian elimination with partial pivoting and detects ill-conditioning.
+## Maximum : <code>number</code>
+n for which n! fits in a JavaScript Number without overflowing.
 
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `K` | `Array<Array<number>>` | — | Stiffness matrix. |
-| `b` | `Array<number>` | — | Right-hand side. |
-| `onWarning` | `(ctx) => void` | `console.warn` | Callback for singularity warnings. |
+**Kind**: global constant  
+<a name="computeL2ErrorScalar"></a>
 
-Returns `Array<number>` — the solution vector.
+## computeL2ErrorScalar(mesh, traceProjector, exactFn, projFn) ⇒ <code>number</code>
+Computes the L2 error between an exact function and its projection.
 
----
+err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
 
-## MeshRefinement
-
-Mesh refinement operators implementing Alfeld face splitting (§6.1.3) and Worsey-Farin tetrahedron splitting (§6.1.4).
-
-```js
-import { MeshRefinement } from 'bcdtpp/src/lib/mesh_refinement.js'
-```
-
-### Constructor
-
-```js
-new MeshRefinement(mesh)
-```
-
-### Methods
-
-#### `computeAlfeldSplit()`
-
-Alfeld split: inserts a face barycenter vertex for each boundary face and subdivides. Mutates `mesh.vertices`. Idempotent.
-
-#### `computeWorseyFarinSplit()`
-
-Worsey-Farin split: splits each tetrahedron using face barycenters. Calls Alfeld first if needed. Mutates `mesh.vertices`. Idempotent.
-
-### Fields
-
-| Field | Description |
-|-------|-------------|
-| `faceBarycenters` | Computed face barycenter coordinates. |
-| `tetBarycenters` | Computed tet barycenter coordinates. |
-| `alfeldTriangles` | Triangles from Alfeld split. |
-| `faceToAlfeld` | Map from face index to Alfeld split data. |
-| `worseyFarinTetrahedra` | Tets from Worsey-Farin split. |
-
----
-
-## PointLocator
-
-AABB tree for O(log N) point-in-tetrahedron queries. Builds a balanced tree via median-split along the longest axis.
-
-```js
-import { PointLocator } from 'bcdtpp/src/lib/point_locator.js'
-```
-
-### Constructor
-
-```js
-new PointLocator(mesh, maxLeafSize?)
-```
-
-| Param | Type | Default | Description |
-|-------|------|---------|-------------|
-| `mesh` | `Mesh` | — | Tetrahedral mesh. |
-| `maxLeafSize` | `number` | `8` | Maximum tets per leaf node. |
-
-### Methods
-
-#### `findTetrahedron(point)`
-
-Returns `{ tIdx, bary }` containing the tetrahedron index and barycentric coordinates, or `null` if not found.
-
----
-
-## H1Projector
-
-Lowest-order H¹ (l=0) vertex-based projector. Projects scalar functions onto continuous piecewise-linear (P1 Lagrange) space.
-
-```js
-import { H1Projector } from 'bcdtpp/src/lib/projectors/h1_projector.js'
-```
-
-### Constructor
-
-```js
-new H1Projector(mesh, whitney, meshRefinement)
-```
-
-### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `project(u, point, tIdx, vertexBoundaryData)` | `number` | H¹ projection of scalar u at a point. |
-| `computeBoundaryIntegralH1(vIdx, u, vertexBoundaryData)` | `number` | Computes boundary integral DoF for a boundary vertex. |
-| `projectRing(u, point, tIdx)` | `number` | Π_ring^0: interior projector with zero boundary trace. |
-| `extendBoundary(boundaryData, point, tIdx)` | `number` | E^0: discrete extension of vertex boundary data. |
-
----
-
-## HcurlProjector
-
-Lowest-order H(curl) (l=1) edge-based projector. Projects vector functions onto the Nédélec first-kind (Whitney 1-form) space.
-
-```js
-import { HcurlProjector } from 'bcdtpp/src/lib/projectors/hcurl_projector.js'
-```
-
-### Constructor
-
-```js
-new HcurlProjector(mesh, whitney, quadratureOrder)
-```
-
-### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `project(u, point, tIdx, boundaryEdgeSet)` | `Array<number>` | H(curl) projection at a point. |
-| `computeEdgeDof(u, eIdx)` | `number` | Exact edge DoF: ∫_e u·t ds. For scalar u reduces to u(v1)−u(v0). |
-| `computeInteriorEdgeCoeff(u, tIdx, i, j, isScalar)` | `number` | Interior edge coefficient in local orientation. |
-| `projectRing(u, point, tIdx, boundaryEdgeSet)` | `Array<number>` | Π_ring^1: interior projector with zero boundary trace. |
-| `extendBoundary(boundaryData, point, tIdx, boundaryEdgeSet)` | `Array<number>` | E^1: discrete extension of edge boundary data. |
-
----
-
-## HdivProjector
-
-Lowest-order H(div) (l=2) face-based projector. Projects vector functions onto the Raviart-Thomas (Whitney 2-form) space.
-
-```js
-import { HdivProjector } from 'bcdtpp/src/lib/projectors/hdiv_projector.js'
-```
-
-### Constructor
-
-```js
-new HdivProjector(mesh, whitney, quadratureOrder)
-```
-
-### Methods
-
-| Method | Returns | Description |
-|--------|---------|-------------|
-| `project(u, point, tIdx, boundaryFaceSet)` | `Array<number>` | H(div) projection at a point. |
-| `computeFaceDof(u, fIdx)` | `number` | Exact face DoF: ∫_f u·n dA. For scalar u integrates grad(u)·n. |
-| `computeInteriorFaceCoeff(u, tIdx, f, isScalar)` | `number` | Interior face coefficient in local outward normal orientation. |
-| `projectRing(u, point, tIdx, boundaryFaceSet)` | `Array<number>` | Π_ring^2: interior projector with zero boundary trace. |
-| `extendBoundary(boundaryData, point, tIdx, boundaryFaceSet)` | `Array<number>` | E^2: discrete extension of face boundary data. |
-
----
-
-## L2Projector
-
-Lowest-order L² (l=3) cell-based projector. Projects scalar functions onto piecewise constants (P0).
-
-```js
-import { L2Projector } from 'bcdtpp/src/lib/projectors/l2_projector.js'
-```
-
-### Constructor
-
-```js
-new L2Projector(mesh, whitney, quadratureOrder)
-```
-
-### Methods
-
-#### `project(u, tIdx)`
-
-Returns the L² projection: volume-weighted average of u over the tetrahedron.
-
----
-
-## Math Utilities
-
-Pure JavaScript linear algebra and vector utilities. No external dependencies.
-
-```js
-import { dot, cross, norm, ... } from 'bcdtpp/src/lib/math_utils.js'
-```
-
-### Vector Operations
-
-| Function | Signature | Returns | Description |
-|----------|-----------|---------|-------------|
-| `dot(a, b)` | `(number[], number[]) → number` | `number` | Dot product of two 3D vectors. |
-| `cross(a, b)` | `(number[], number[]) → number[]` | `number[]` | Cross product of two 3D vectors. |
-| `subtract(a, b)` | `(number[], number[]) → number[]` | `number[]` | Vector subtraction a − b. |
-| `subtractInto(a, b, out)` | `(number[], number[], number[]) → number[]` | `number[]` | In-place subtraction: out = a − b. |
-| `crossInto(a, b, out)` | `(number[], number[], number[]) → number[]` | `number[]` | In-place cross product: out = a × b. |
-| `norm(v)` | `(number[]) → number` | `number` | Euclidean norm of a vector. |
-
-### Geometry
-
-| Function | Signature | Returns | Description |
-|----------|-----------|---------|-------------|
-| `tetDeterminant(v0, v1, v2, v3)` | `(number[], number[], number[], number[]) → number` | `number` | Scalar triple product; \|det\|/6 = volume. |
-| `tetVolume(v0, v1, v2, v3)` | `(number[], number[], number[], number[]) → number` | `number` | Geometric volume of a tetrahedron. |
-| `triangleArea(p1, p2, p3)` | `(number[], number[], number[]) → number` | `number` | Area of a triangle. |
-| `factorial(n)` | `(number) → number` | `number` | Computes n!. Throws if n > 170. |
-
-### Matrix Operations
-
-| Function | Signature | Returns | Description |
-|----------|-----------|---------|-------------|
-| `zeros(rows, cols)` | `(number, number) → number[][]` | `number[][]` | Zero-initialized dense matrix. |
-| `infinityNorm(a)` | `(number[][]) → number` | `number` | Infinity norm (max absolute row sum). |
-| `luSolve(a, b)` | `(number[][], number[]) → number[]` | `number[]` | Solves Ax = b via Gaussian elimination with partial pivoting and row equilibration. |
-| `inverse3x3(m)` | `(number[][]) → number[][]` | `number[][]` | Inverse of a 3×3 matrix. |
-| `solve3x3(a, b)` | `(number[][], number[]) → number[]` | `number[]` | Solves a 3×3 system via Cramer's rule. |
-
-### Numerical Methods
-
-| Function | Signature | Returns | Description |
-|----------|-----------|---------|-------------|
-| `numericalGradient(u, pt, h?)` | `((number[]→number), number[], number?) → number[]` | `number[]` | Numerical gradient via central differences. Default h = 1e-6. |
-
-### Constants
-
-| Name | Type | Value | Description |
-|------|------|-------|-------------|
-| `MAX_SAFE_FACTORIAL` | `number` | `170` | Maximum n for which n! fits in a JavaScript Number. |
-
----
-
-## Error Classes
-
-All error classes extend `Error` and are exported from `bcdtpp/src/lib/errors.js`.
-
-### MeshValidationError
-
-Thrown when mesh input data fails validation (e.g., degenerate tetrahedra, out-of-bounds indices, non-unique vertices).
-
-```js
-new MeshValidationError(message, index?)
-```
+**Kind**: global function  
 
 | Param | Type | Description |
-|-------|------|-------------|
-| `message` | `string` | Description of the validation failure. |
-| `index` | `number` | The offending element index, if applicable. |
+| --- | --- | --- |
+| mesh | [<code>Mesh</code>](#Mesh) |  |
+| traceProjector | [<code>TraceProjector</code>](#TraceProjector) |  |
+| exactFn | <code>function</code> |  |
+| projFn | <code>function</code> | Function taking (tIdx, point) and returning the projected value at that point. |
 
-### ProjectionError
+<a name="computeL2ErrorVector"></a>
 
-Thrown when a projection cannot be computed (e.g., singular matrix, invalid arguments).
+## computeL2ErrorVector(mesh, traceProjector, exactFn, projFn) ⇒ <code>number</code>
+Computes the L2 error for a vector-valued projection.
 
+err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| mesh | [<code>Mesh</code>](#Mesh) | 
+| traceProjector | [<code>TraceProjector</code>](#TraceProjector) | 
+| exactFn | <code>function</code> | 
+| projFn | <code>function</code> | 
+
+<a name="computeH1SemiError"></a>
+
+## computeH1SemiError(mesh, traceProjector, exactFn, projFn) ⇒ <code>number</code>
+Computes the H1 semi-norm error (L2 error of the gradient) for scalar projections.
+Uses numerical differentiation of the exact function for comparison.
+
+err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| mesh | [<code>Mesh</code>](#Mesh) | 
+| traceProjector | [<code>TraceProjector</code>](#TraceProjector) | 
+| exactFn | <code>function</code> | 
+| projFn | <code>function</code> | 
+
+<a name="estimateMeshSize"></a>
+
+## estimateMeshSize(mesh) ⇒ <code>number</code>
+Estimates the mesh size h as the cube root of the average tetrahedron volume
+scaled to unit volume, or more simply the maximum edge length.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| mesh | [<code>Mesh</code>](#Mesh) | 
+
+<a name="computeRate"></a>
+
+## computeRate(err1, err2, h1, h2) ⇒ <code>number</code>
+Computes the observed convergence rate between two successive error measurements.
+
+rate = log(err_1 / err_2) / log(h_1 / h_2)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| err1 | <code>number</code> | Error on finer mesh. |
+| err2 | <code>number</code> | Error on coarser mesh. |
+| h1 | <code>number</code> | Mesh size of finer mesh. |
+| h2 | <code>number</code> | Mesh size of coarser mesh. |
+
+<a name="runConvergenceStudy"></a>
+
+## runConvergenceStudy(meshes, config) ⇒ <code>Array.&lt;{h: number, l2Err: number, h1Err: (number\|undefined), rateL2: (number\|undefined), rateH1: (number\|undefined)}&gt;</code>
+Runs a convergence study on a sequence of meshes.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| meshes | <code>Array.&lt;!Mesh&gt;</code> | Sequence of progressively finer meshes. |
+| config | <code>Object</code> |  |
+| config.exactScalar | <code>function</code> | Exact scalar function. |
+| config.exactVector | <code>function</code> | Exact vector function. |
+| [config.l] | <code>number</code> | Form degree (default 0). |
+| [config.p] | <code>number</code> | Polynomial degree (default 0). |
+| [config.quadratureOrder] | <code>number</code> | Quadrature order (default 3). |
+
+<a name="dot"></a>
+
+## dot(a, b) ⇒ <code>number</code>
+Computes the dot product of two 3D vectors.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>Array.&lt;number&gt;</code> | 
+| b | <code>Array.&lt;number&gt;</code> | 
+
+<a name="tetDeterminant"></a>
+
+## tetDeterminant(v0, v1, v2, v3) ⇒ <code>number</code>
+Computes the determinant (scalar triple product) of the tetrahedron with
+vertices v0, v1, v2, v3.  The absolute value divided by 6 equals the volume.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| v0 | <code>Array.&lt;number&gt;</code> | 
+| v1 | <code>Array.&lt;number&gt;</code> | 
+| v2 | <code>Array.&lt;number&gt;</code> | 
+| v3 | <code>Array.&lt;number&gt;</code> | 
+
+<a name="tetVolume"></a>
+
+## tetVolume(v0, v1, v2, v3) ⇒ <code>number</code>
+Computes the geometric volume of a tetrahedron.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| v0 | <code>Array.&lt;number&gt;</code> | 
+| v1 | <code>Array.&lt;number&gt;</code> | 
+| v2 | <code>Array.&lt;number&gt;</code> | 
+| v3 | <code>Array.&lt;number&gt;</code> | 
+
+<a name="cross"></a>
+
+## cross(a, b) ⇒ <code>Array.&lt;number&gt;</code>
+Computes the cross product of two 3D vectors.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>Array.&lt;number&gt;</code> | 
+| b | <code>Array.&lt;number&gt;</code> | 
+
+<a name="subtract"></a>
+
+## subtract(a, b) ⇒ <code>Array.&lt;number&gt;</code>
+Subtracts vector b from vector a.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>Array.&lt;number&gt;</code> | 
+| b | <code>Array.&lt;number&gt;</code> | 
+
+<a name="norm"></a>
+
+## norm(v) ⇒ <code>number</code>
+Computes the Euclidean norm of a vector.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| v | <code>Array.&lt;number&gt;</code> | 
+
+<a name="subtractInto"></a>
+
+## subtractInto(a, b, out) ⇒ <code>Array.&lt;number&gt;</code>
+In-place vector subtraction: out = a - b.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>Array.&lt;number&gt;</code> | 
+| b | <code>Array.&lt;number&gt;</code> | 
+| out | <code>Array.&lt;number&gt;</code> | 
+
+<a name="crossInto"></a>
+
+## crossInto(a, b, out) ⇒ <code>Array.&lt;number&gt;</code>
+In-place cross product: out = a x b.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>Array.&lt;number&gt;</code> | 
+| b | <code>Array.&lt;number&gt;</code> | 
+| out | <code>Array.&lt;number&gt;</code> | 
+
+<a name="triangleArea"></a>
+
+## triangleArea(p1, p2, p3) ⇒ <code>number</code>
+Computes the area of a triangle given its three vertices.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| p1 | <code>Array.&lt;number&gt;</code> | 
+| p2 | <code>Array.&lt;number&gt;</code> | 
+| p3 | <code>Array.&lt;number&gt;</code> | 
+
+<a name="zeros"></a>
+
+## zeros(rows, cols) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
+Creates a zero-initialized dense matrix.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| rows | <code>number</code> | 
+| cols | <code>number</code> | 
+
+<a name="infinityNorm"></a>
+
+## infinityNorm(a) ⇒ <code>number</code>
+Computes the infinity norm (maximum absolute row sum) of a matrix.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+
+<a name="luSolve"></a>
+
+## luSolve(a, b) ⇒ <code>Array.&lt;number&gt;</code>
+Solves Ax = b using Gaussian elimination with partial pivoting and row
+equilibration (pivot scaling).
+
+The matrix is scaled so that each row has max-norm 1 before elimination,
+reducing the risk of false singularity claims on poorly scaled systems.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| a | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Dense square matrix (not modified). |
+| b | <code>Array.&lt;number&gt;</code> |  |
+
+<a name="inverse3x3"></a>
+
+## inverse3x3(m) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
+Computes the inverse of a 3x3 matrix.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| m | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+
+<a name="solve3x3"></a>
+
+## solve3x3(a, b) ⇒ <code>Array.&lt;number&gt;</code>
+Solves a 3x3 linear system Ax = b using Cramer's rule.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| a | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 3x3 matrix. |
+| b | <code>Array.&lt;number&gt;</code> | 3-vector. |
+
+<a name="factorial"></a>
+
+## factorial(n) ⇒ <code>number</code>
+Computes the factorial n!.
+
+**Kind**: global function  
+**Throws**:
+
+- <code>Error</code> If n > MAX_SAFE_FACTORIAL (would overflow Number.MAX_VALUE).
+
+
+| Param | Type | Description |
+| --- | --- | --- |
+| n | <code>number</code> | Non-negative integer. |
+
+<a name="numericalGradient"></a>
+
+## numericalGradient(u, pt, [h]) ⇒ <code>Array.&lt;number&gt;</code>
+Numerical gradient of a scalar function using central differences.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| u | <code>function</code> | 
+| pt | <code>Array.&lt;number&gt;</code> | 
+| [h] | <code>number</code> | 
+
+<a name="generateUnitCubeMesh"></a>
+
+## generateUnitCubeMesh(n) ⇒ [<code>Mesh</code>](#Mesh)
+Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
+Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
+the body diagonal from (0,0,0) to (1,1,1).
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| n | <code>number</code> | Number of cubes per axis (creates n^3 cubes). |
+
+<a name="generateSingleTetMesh"></a>
+
+## generateSingleTetMesh() ⇒ [<code>Mesh</code>](#Mesh)
+Generates a single reference tetrahedron mesh.
+
+**Kind**: global function  
+<a name="sort3"></a>
+
+## sort3(a, b, c) ⇒ <code>Array.&lt;number&gt;</code>
+Sorts three numbers in ascending order.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>number</code> | 
+| b | <code>number</code> | 
+| c | <code>number</code> | 
+
+<a name="triangleQuadrature"></a>
+
+## triangleQuadrature(order) ⇒ <code>Object</code>
+Returns quadrature points and weights on the reference triangle.
+
+Note: order 3 contains a negative weight (-9/16). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
+
+<a name="tetrahedronQuadrature"></a>
+
+## tetrahedronQuadrature(order) ⇒ <code>Object</code>
+Returns quadrature points and weights on the reference tetrahedron.
+
+Note: order 3 contains a negative weight (-4/5). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
+
+<a name="integrateTriangle"></a>
+
+## integrateTriangle(vertices, fn, [order]) ⇒ <code>number</code>
+Integrates a scalar function over a triangle using quadrature.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Triangle vertices. |
+| fn | <code>function</code> | Scalar function. |
+| [order] | <code>number</code> | Quadrature order (default 2). |
+
+<a name="barycentricToCartesian"></a>
+
+## barycentricToCartesian(vertices, bary) ⇒ <code>Array.&lt;number&gt;</code>
+Maps barycentric coordinates to a Cartesian point.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Vertices of the element. |
+| bary | <code>Array.&lt;number&gt;</code> | Barycentric coordinates. |
+
+<a name="lineQuadrature"></a>
+
+## lineQuadrature(order) ⇒ <code>Object</code>
+Returns quadrature points and weights on the reference interval [0, 1].
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
+
+**Example**  
 ```js
-new ProjectionError(message)
+const {points, weights} = lineQuadrature(2);
+const integral = points.reduce((s, x, i) => s + weights[i] * f(x), 0);
 ```
+<a name="compositeTetrahedronQuadrature"></a>
 
-### SingularMatrixError
+## compositeTetrahedronQuadrature(order) ⇒ <code>Object</code>
+Returns a composite quadrature rule by subdividing the reference tetrahedron
+into 4 sub-tetrahedra via the centroid and applying the base rule on each.
+This increases the number of quadrature points, ensuring the mass matrix
+for polynomial spaces up to degree 3 remains full-rank.
 
-Thrown when a linear system is singular or numerically ill-conditioned.
+**Kind**: global function  
 
-```js
-new SingularMatrixError(message)
-```
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Base quadrature order. |
+
+<a name="integrateTetrahedron"></a>
+
+## integrateTetrahedron(vertices, fn, [order]) ⇒ <code>number</code>
+Integrates a scalar function over a tetrahedron using quadrature.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Tetrahedron vertices. |
+| fn | <code>function</code> | Scalar function. |
+| [order] | <code>number</code> | Quadrature order (default 2). |
+

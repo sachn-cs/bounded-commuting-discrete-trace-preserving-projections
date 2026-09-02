@@ -35,11 +35,10 @@ export class BoundaryWeightComputer {
 
   /**
    * Computes all boundary weights.
-   * @return {{
-   *   vertexBoundaryData: !Map<number, {nodeMap: !Array<number>, invNodeMap: !Map<number, number>, psi: !Array<number>}>,
-   *   edgeBoundaryData: !Map<number, {v0: number, v1: number, tangent: !Array<number>, length: number}>,
-   *   faceBoundaryData: !Map<number, {normal: !Array<number>, area: number}>,
-   * }}
+   * @return {Object} Boundary weight and geometry data.
+   * @property {!Map<number, {nodeMap: !Array<number>, invNodeMap: !Map<number, number>, psi: !Array<number>}>} vertexBoundaryData
+   * @property {!Map<number, {v0: number, v1: number, tangent: !Array<number>, length: number}>} edgeBoundaryData
+   * @property {!Map<number, {normal: !Array<number>, area: number}>} faceBoundaryData
    */
   compute () {
     const vertexBoundaryData = this.#computeVertexWeights()
