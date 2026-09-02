@@ -4,16 +4,17 @@
  * Face-based vector projection with boundary-aware normal trace DoFs.
  */
 
-import { dot, cross, subtract, norm, numericalGradient, triangleArea } from '../math_utils.js'
+import { dot, numericalGradient, triangleArea } from '../math_utils.js'
 import { triangleQuadrature, barycentricToCartesian } from '../quadrature.js'
-import { ProjectionError } from '../errors.js'
 
 /**
  * Lowest-order H(div) (l=2) face-based projector implementing Pi^2.
  *
  * Projects vector functions onto the Raviart-Thomas (Whitney 2-form) space.
- * Boundary faces use exact normal-flux degrees of freedom (∫_f u·n dA);
- * interior faces use barycenter evaluation of the normal component.
+ * Every face uses the same exact normal-flux degree of freedom
+ * (∫_f u·n dA) with the mesh-orientation normal, so interior faces share a
+ * consistent coefficient with both adjacent tetrahedra and the discrete
+ * normal trace is continuous across the mesh.
  */
 export class HdivProjector {
   /**
@@ -41,22 +42,13 @@ export class HdivProjector {
     const tFaces = this.mesh.getTetrahedronFaces(tIdx)
     const result = [0, 0, 0]
 
-    const samplePt = this.mesh.getTetrahedronBarycenter(tIdx)
-    const isScalar = typeof u(samplePt) === 'number'
-
     for (let f = 0; f < 4; f++) {
       const fIdx = tFaces[f]
-
-      let coefficient
-      if (boundaryFaceSet.has(fIdx)) {
-        coefficient = this.computeFaceDof(u, fIdx)
-      } else {
-        coefficient = this.computeInteriorFaceCoeff(u, tIdx, f, isScalar)
-      }
-
-      result[0] += coefficient * faceBasis[f][0]
-      result[1] += coefficient * faceBasis[f][1]
-      result[2] += coefficient * faceBasis[f][2]
+      const coefficient = this.computeFaceDof(u, fIdx)
+      const sign = this.#faceBasisSign(tIdx, f, fIdx)
+      result[0] += sign * coefficient * faceBasis[f][0]
+      result[1] += sign * coefficient * faceBasis[f][1]
+      result[2] += sign * coefficient * faceBasis[f][2]
     }
 
     return result
@@ -91,52 +83,26 @@ export class HdivProjector {
   }
 
   /**
-   * Computes the interior face coefficient for H(div) in local outward normal.
-   * @param {function(!Array<number>): (number|!Array<number>)} u
+   * Sign aligning the Whitney face-basis orientation for local face f of tet
+   * tIdx with the mesh-stored face orientation used by the DoFs.
+   *
+   * The Whitney face basis points outward from the tetrahedron and its local
+   * vertex ordering differs from the mesh's stored ordering by a permutation,
+   * so the flux coefficient must be multiplied by the sign of (phi_f . n_stored)
+   * evaluated on the face to reproduce the same normal trace on both adjacent
+   * tetrahedra.
    * @param {number} tIdx
    * @param {number} f
-   * @param {boolean} isScalar
-   * @return {number}
+   * @param {number} fIdx
+   * @return {number} +1 or -1 (never 0).
+   * @private
    */
-  computeInteriorFaceCoeff (u, tIdx, f, isScalar) {
-    const tet = this.mesh.getTetrahedra()[tIdx]
-    const fIdx = this.mesh.getTetrahedronFaces(tIdx)[f]
-    const faceBary = this.mesh.getFaceBarycenter(fIdx)
-    const localFaces = [
-      [tet[1], tet[2], tet[3]],
-      [tet[0], tet[2], tet[3]],
-      [tet[0], tet[1], tet[3]],
-      [tet[0], tet[1], tet[2]]
-    ]
-    const lf = localFaces[f]
-    const verts = lf.map((v) => this.mesh.getVertices()[v])
-    const e1 = subtract(verts[1], verts[0])
-    const e2 = subtract(verts[2], verts[0])
-    const nRaw = cross(e1, e2)
-    const area = 0.5 * norm(nRaw)
-    if (area < 1e-12) {
-      throw new ProjectionError(
-        `Degenerate face in tetrahedron ${tIdx}: face area=${area}`
-      )
-    }
-    const normal = nRaw.map((c) => c / (2 * area))
-    const oppV = tet.find((v) => !lf.includes(v))
-    const oppP = this.mesh.getVertices()[oppV]
-    const centroid = [
-      (verts[0][0] + verts[1][0] + verts[2][0]) / 3,
-      (verts[0][1] + verts[1][1] + verts[2][1]) / 3,
-      (verts[0][2] + verts[1][2] + verts[2][2]) / 3
-    ]
-    const toOpp = subtract(oppP, centroid)
-    if (dot(normal, toOpp) > 0) {
-      normal[0] *= -1
-      normal[1] *= -1
-      normal[2] *= -1
-    }
-    if (isScalar) {
-      return dot(numericalGradient(u, faceBary), normal) * area
-    }
-    return dot(u(faceBary), normal) * area
+  #faceBasisSign (tIdx, f, fIdx) {
+    const fb = [1 / 3, 1 / 3, 1 / 3, 1 / 3]
+    fb[f] = 0
+    const phi = this.whitney.getFaceBasis(tIdx, fb)[f]
+    const n = this.mesh.getFaceOutwardNormal(fIdx)
+    return Math.sign(phi[0] * n[0] + phi[1] * n[1] + phi[2] * n[2])
   }
 
   /**
@@ -152,18 +118,17 @@ export class HdivProjector {
     const faceBasis = this.whitney.getFaceBasis(tIdx, bary)
     const tFaces = this.mesh.getTetrahedronFaces(tIdx)
     const result = [0, 0, 0]
-    const samplePt = this.mesh.getTetrahedronBarycenter(tIdx)
-    const isScalar = typeof u(samplePt) === 'number'
 
     for (let f = 0; f < 4; f++) {
       const fIdx = tFaces[f]
       if (boundaryFaceSet.has(fIdx)) {
         continue
       }
-      const coefficient = this.computeInteriorFaceCoeff(u, tIdx, f, isScalar)
-      result[0] += coefficient * faceBasis[f][0]
-      result[1] += coefficient * faceBasis[f][1]
-      result[2] += coefficient * faceBasis[f][2]
+      const coefficient = this.computeFaceDof(u, fIdx)
+      const sign = this.#faceBasisSign(tIdx, f, fIdx)
+      result[0] += sign * coefficient * faceBasis[f][0]
+      result[1] += sign * coefficient * faceBasis[f][1]
+      result[2] += sign * coefficient * faceBasis[f][2]
     }
     return result
   }

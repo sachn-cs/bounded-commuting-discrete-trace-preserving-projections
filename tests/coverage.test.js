@@ -13,7 +13,7 @@ import { HigherOrderProjection } from '../src/lib/higher_order_projection.js'
 import { BoundaryWeightComputer } from '../src/lib/boundary_weight_computer.js'
 import { MeshRefinement } from '../src/lib/mesh_refinement.js'
 import { MeshValidationError } from '../src/lib/errors.js'
-import { factorial } from '../src/lib/math_utils.js'
+import { factorial, dot } from '../src/lib/math_utils.js'
 import { generateUnitCubeMesh } from '../src/lib/mesh_generator.js'
 
 // Multi-tet mesh: exercises projection across shared faces/edges and
@@ -102,6 +102,38 @@ describe('Multi-tet TraceProjector Projections', () => {
       expect(proj[0]).to.be.closeTo(gradU[0], Math.pow(10, -5))
       expect(proj[1]).to.be.closeTo(gradU[1], Math.pow(10, -5))
       expect(proj[2]).to.be.closeTo(gradU[2], Math.pow(10, -5))
+    }
+  })
+
+  it('Pi^2 has a continuous normal trace across the shared interior face', () => {
+    const sharedIdx = mesh.faces.findIndex((_, fIdx) => mesh.faceToTets[fIdx].length === 2)
+    expect(sharedIdx).to.be.greaterThan(-1)
+    const n = mesh.getFaceOutwardNormal(sharedIdx)
+    const fv = mesh.faces[sharedIdx].map((v) => mesh.vertices[v])
+    const centroid = [
+      (fv[0][0] + fv[1][0] + fv[2][0]) / 3,
+      (fv[0][1] + fv[1][1] + fv[2][1]) / 3,
+      (fv[0][2] + fv[1][2] + fv[2][2]) / 3
+    ]
+    const points = [centroid]
+    for (const pair of [[0, 1], [0, 2], [1, 2]]) {
+      points.push([
+        (fv[pair[0]][0] + fv[pair[1]][0]) / 2,
+        (fv[pair[0]][1] + fv[pair[1]][1]) / 2,
+        (fv[pair[0]][2] + fv[pair[1]][2]) / 2
+      ])
+    }
+    const v = (pt) => [1, 0, 0]
+    const [t0, t1] = mesh.faceToTets[sharedIdx]
+    for (const pt of points) {
+      const pi0 = traceProjector.projectHdiv(v, pt, t0)
+      const pi1 = traceProjector.projectHdiv(v, pt, t1)
+      const c0 = dot(pi0, n)
+      const c1 = dot(pi1, n)
+      expect(Number.isFinite(c0)).to.equal(true)
+      // Interior-face coefficients must use the same mesh-orientation normal
+      // on both adjacent tets so the discrete normal trace is continuous.
+      expect(c0).to.be.closeTo(c1, Math.pow(10, -10))
     }
   })
 })
@@ -338,7 +370,12 @@ describe('Bubble Projection', () => {
     const origGetVolume = mesh.getVolume.bind(mesh)
     mesh.getVolume = () => 0
     const coeffs = hop.solveL2Projection(0, 2, () => 1)
-    expect(coeffs).to.deep.equal([])
+    // The failed solve falls back to the cell mean (constant polynomial),
+    // never to a silent zero.
+    expect(coeffs.length).to.be.above(0)
+    for (const c of coeffs) {
+      expect(c).to.be.closeTo(1, Math.pow(10, -10))
+    }
     expect(warnSpy.called).to.equal(true)
     mesh.getVolume = origGetVolume
   })
