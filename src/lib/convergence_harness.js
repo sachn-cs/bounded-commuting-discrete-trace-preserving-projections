@@ -1,12 +1,12 @@
 /**
- * Convergence experiment harness for BCDTPP projection operators.
+ * Convergence experiment harness for TraceProjector projection operators.
  *
  * Computes discrete error norms and convergence rates on a sequence of meshes.
  */
 
 import { integrateTetrahedron } from './quadrature.js'
 import { ProjectionError } from './errors.js'
-import { Bcdtpp } from './bcdtpp.js'
+import { TraceProjector } from './traceprojector.js'
 import { Whitney } from './whitney.js'
 
 /**
@@ -15,13 +15,13 @@ import { Whitney } from './whitney.js'
    * err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
    *
  * @param {!Mesh} mesh
- * @param {!Bcdtpp} bcdtpp
+ * @param {!TraceProjector} traceProjector
  * @param {function(!Array<number>): number} exactFn
  * @param {function(number, !Array<number>): number} projFn
  *   Function taking (tIdx, point) and returning the projected value at that point.
  * @return {number}
  */
-export function computeL2ErrorScalar (mesh, bcdtpp, exactFn, projFn) {
+export function computeL2ErrorScalar (mesh, traceProjector, exactFn, projFn) {
   let errSq = 0
   for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
     const verts = mesh.tetrahedra[tIdx].map((i) => mesh.vertices[i])
@@ -30,7 +30,7 @@ export function computeL2ErrorScalar (mesh, bcdtpp, exactFn, projFn) {
       const proj = projFn(tIdx, pt)
       return (exact - proj) * (exact - proj)
     }
-    errSq += integrateTetrahedron(verts, integrand, bcdtpp.quadratureOrder)
+    errSq += integrateTetrahedron(verts, integrand, traceProjector.quadratureOrder)
   }
   return Math.sqrt(Math.max(0, errSq))
 }
@@ -41,12 +41,12 @@ export function computeL2ErrorScalar (mesh, bcdtpp, exactFn, projFn) {
    * err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
    *
  * @param {!Mesh} mesh
- * @param {!Bcdtpp} bcdtpp
+ * @param {!TraceProjector} traceProjector
  * @param {function(!Array<number>): !Array<number>} exactFn
  * @param {function(number, !Array<number>): !Array<number>} projFn
  * @return {number}
  */
-export function computeL2ErrorVector (mesh, bcdtpp, exactFn, projFn) {
+export function computeL2ErrorVector (mesh, traceProjector, exactFn, projFn) {
   let errSq = 0
   for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
     const verts = mesh.tetrahedra[tIdx].map((i) => mesh.vertices[i])
@@ -58,7 +58,7 @@ export function computeL2ErrorVector (mesh, bcdtpp, exactFn, projFn) {
       const dz = exact[2] - proj[2]
       return dx * dx + dy * dy + dz * dz
     }
-    errSq += integrateTetrahedron(verts, integrand, bcdtpp.quadratureOrder)
+    errSq += integrateTetrahedron(verts, integrand, traceProjector.quadratureOrder)
   }
   return Math.sqrt(Math.max(0, errSq))
 }
@@ -70,12 +70,12 @@ export function computeL2ErrorVector (mesh, bcdtpp, exactFn, projFn) {
    * err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
    *
  * @param {!Mesh} mesh
- * @param {!Bcdtpp} bcdtpp
+ * @param {!TraceProjector} traceProjector
  * @param {function(!Array<number>): number} exactFn
  * @param {function(number, !Array<number>): number} projFn
  * @return {number}
  */
-export function computeH1SemiError (mesh, bcdtpp, exactFn, projFn) {
+export function computeH1SemiError (mesh, traceProjector, exactFn, projFn) {
   const h = 1e-6
   const gradExact = (pt) => [
     (exactFn([pt[0] + h, pt[1], pt[2]]) - exactFn([pt[0] - h, pt[1], pt[2]])) / (2 * h),
@@ -108,7 +108,7 @@ export function computeH1SemiError (mesh, bcdtpp, exactFn, projFn) {
       const dz = gE[2] - gP[2]
       return dx * dx + dy * dy + dz * dz
     }
-    errSq += integrateTetrahedron(verts, integrand, bcdtpp.quadratureOrder)
+    errSq += integrateTetrahedron(verts, integrand, traceProjector.quadratureOrder)
   }
   return Math.sqrt(Math.max(0, errSq))
 }
@@ -178,9 +178,9 @@ export function runConvergenceStudy (meshes, config) {
 
   for (let i = 0; i < meshes.length; i++) {
     const mesh = meshes[i]
-    // Re-create Bcdtpp for each mesh since it holds mesh-specific data.
+    // Re-create TraceProjector for each mesh since it holds mesh-specific data.
     const w = new Whitney(mesh)
-    const b = new Bcdtpp(mesh, w, { quadratureOrder })
+    const b = new TraceProjector(mesh, w, { quadratureOrder })
     b.computeBoundaryWeights()
     b.buildPointLocator()
 

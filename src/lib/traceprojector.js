@@ -1,5 +1,5 @@
 /**
- * BCDTPP: Bounded, Commuting, Discrete-trace Preserving Projections.
+ * TRACEPROJECTOR: Bounded, Commuting, Discrete-trace Preserving Projections.
  *
  * Implements the de Rham projection operators Pi^l for l = 0,1,2,3 on
  * tetrahedral meshes with boundary-aware trace preservation.
@@ -19,7 +19,7 @@ import { HdivProjector } from './projectors/hdiv_projector.js'
 import { L2Projector } from './projectors/l2_projector.js'
 
 /**
- * BCDTPP: Bounded, Commuting, Discrete-trace Preserving Projections.
+ * TRACEPROJECTOR: Bounded, Commuting, Discrete-trace Preserving Projections.
  *
  * Implements the de Rham projection operators Pi^l for l = 0,1,2,3 on
  * tetrahedral meshes with boundary-aware trace preservation.
@@ -29,7 +29,7 @@ import { L2Projector } from './projectors/l2_projector.js'
  * signs, etc.).  Swapping in a different mesh implementation requires only that
  * the new class implements the same getter interface.
  */
-export class Bcdtpp {
+export class TraceProjector {
   /** @type {!Mesh} */
   #mesh
   /** @type {!Whitney} */
@@ -115,7 +115,7 @@ export class Bcdtpp {
         code: 'BCDTPP_DEGENERATE_MESH',
         severity: 'warn',
         message:
-          `Bcdtpp: mesh contains ${degenerateCount} degenerate or ` +
+          `TraceProjector: mesh contains ${degenerateCount} degenerate or ` +
           'near-degenerate tetrahedra. Projections may fail.'
       })
     }
@@ -183,7 +183,7 @@ export class Bcdtpp {
    * @return {number}
    */
   projectH1 (u, point, tIdx) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     return this.#h1Projector.project(u, point, tIdx, this.#vertexBoundaryData)
   }
@@ -198,7 +198,7 @@ export class Bcdtpp {
    * @return {!Array<number>}
    */
   projectHcurl (u, point, tIdx) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     return this.#hcurlProjector.project(u, point, tIdx, this.#boundaryEdgeSet)
   }
@@ -213,7 +213,7 @@ export class Bcdtpp {
    * @return {!Array<number>}
    */
   projectHdiv (u, point, tIdx) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     return this.#hdivProjector.project(u, point, tIdx, this.#boundaryFaceSet)
   }
@@ -239,7 +239,7 @@ export class Bcdtpp {
    * @return {(number|!Array<number>)}
    */
   projectHp (u, point, tIdx, l, p) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     if (p === 0) {
       const dispatch = {
@@ -309,7 +309,7 @@ export class Bcdtpp {
    * @return {(number|!Array<number>)}
    */
   project (u, point, tIdx, l, p = 0) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     if (p !== 0) {
       return this.projectHp(u, point, tIdx, l, p)
@@ -388,7 +388,7 @@ export class Bcdtpp {
    * @return {(number|!Array<number>)}
    */
   projectRing (u, point, tIdx, l) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     const dispatch = {
       0: () => this.#h1Projector.projectRing(u, point, tIdx),
@@ -411,7 +411,7 @@ export class Bcdtpp {
    * @return {(number|!Array<number>)}
    */
   extendBoundary (boundaryData, point, tIdx, l) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     const dispatch = {
       0: () => this.#h1Projector.extendBoundary(boundaryData, point, tIdx),
@@ -435,7 +435,7 @@ export class Bcdtpp {
    * @return {(number|!Array<number>)}
    */
   projectPartial (u, point, tIdx, l) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     this.#validateTetIdx(tIdx)
     const boundaryData = this.extractBoundaryDofs(u, l)
     return this.extendBoundary(boundaryData, point, tIdx, l)
@@ -450,7 +450,7 @@ export class Bcdtpp {
    * @return {{value: (number|!Array<number>), tIdx: number, bary: !Array<number>}}
    */
   projectAtPoint (u, point, l = 0, p = 0) {
-    Bcdtpp.#validatePoint(point)
+    TraceProjector.#validatePoint(point)
     if (!this.#pointLocator) {
       this.buildPointLocator()
     }
