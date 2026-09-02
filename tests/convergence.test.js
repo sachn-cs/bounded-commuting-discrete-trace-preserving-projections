@@ -4,7 +4,7 @@
  */
 import { expect } from 'chai'
 import { Whitney } from '../src/lib/whitney.js'
-import { Bcdtpp } from '../src/lib/bcdtpp.js'
+import { TraceProjector } from '../src/lib/traceProjector.js'
 import {
   generateUnitCubeMesh,
   generateSingleTetMesh
@@ -148,8 +148,8 @@ describe('Convergence Harness Utilities', () => {
 describe('p-Convergence on Single Tet', () => {
   const mesh = generateSingleTetMesh()
   const whitney = new Whitney(mesh)
-  const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-  bcdtpp.computeBoundaryWeights()
+  const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+  traceProjector.computeBoundaryWeights()
 
   // Quadratic exact function: u(x,y,z) = x^2 + y^2 + z^2.
   // P^1 cannot represent quadratics exactly; P^2 can.
@@ -157,23 +157,23 @@ describe('p-Convergence on Single Tet', () => {
     pt[0] * pt[0] + pt[1] * pt[1] + pt[2] * pt[2]
 
   it('l=0 p=1 L2 error is non-zero for quadratic', () => {
-    const projFn = (tIdx, pt) => bcdtpp.projectHp(exactQuadratic, pt, tIdx, 0, 1)
-    const err = computeL2ErrorScalar(mesh, bcdtpp, exactQuadratic, projFn)
+    const projFn = (tIdx, pt) => traceProjector.projectHp(exactQuadratic, pt, tIdx, 0, 1)
+    const err = computeL2ErrorScalar(mesh, traceProjector, exactQuadratic, projFn)
     expect(err).to.be.above(1e-3)
   })
 
   it('l=0 p=2 L2 error is smaller than p=1 for quadratic', () => {
-    const projP1 = (tIdx, pt) => bcdtpp.projectHp(exactQuadratic, pt, tIdx, 0, 1)
-    const projP2 = (tIdx, pt) => bcdtpp.projectHp(exactQuadratic, pt, tIdx, 0, 2)
-    const errP1 = computeL2ErrorScalar(mesh, bcdtpp, exactQuadratic, projP1)
-    const errP2 = computeL2ErrorScalar(mesh, bcdtpp, exactQuadratic, projP2)
+    const projP1 = (tIdx, pt) => traceProjector.projectHp(exactQuadratic, pt, tIdx, 0, 1)
+    const projP2 = (tIdx, pt) => traceProjector.projectHp(exactQuadratic, pt, tIdx, 0, 2)
+    const errP1 = computeL2ErrorScalar(mesh, traceProjector, exactQuadratic, projP1)
+    const errP2 = computeL2ErrorScalar(mesh, traceProjector, exactQuadratic, projP2)
     expect(errP2).to.be.below(errP1)
   })
 
   it('l=3 p=2 differs from p=0 for quadratic at barycenter', () => {
     const pt = mesh.getTetrahedronBarycenter(0)
-    const p0 = bcdtpp.projectHp(exactQuadratic, pt, 0, 3, 0)
-    const p2 = bcdtpp.projectHp(exactQuadratic, pt, 0, 3, 2)
+    const p0 = traceProjector.projectHp(exactQuadratic, pt, 0, 3, 0)
+    const p2 = traceProjector.projectHp(exactQuadratic, pt, 0, 3, 2)
     expect(typeof p2).to.equal('number')
     expect(Number.isFinite(p2)).to.equal(true)
     expect(p2).to.not.equal(p0)
@@ -204,12 +204,12 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-      bcdtpp.computeBoundaryWeights()
+      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      traceProjector.computeBoundaryWeights()
 
-      const projFn = (tIdx, pt) => bcdtpp.projectHp(exactScalar, pt, tIdx, 0, 0)
-      const l2Err = computeL2ErrorScalar(mesh, bcdtpp, exactScalar, projFn)
-      const h1Err = computeH1SemiError(mesh, bcdtpp, exactScalar, projFn)
+      const projFn = (tIdx, pt) => traceProjector.projectHp(exactScalar, pt, tIdx, 0, 0)
+      const l2Err = computeL2ErrorScalar(mesh, traceProjector, exactScalar, projFn)
+      const h1Err = computeH1SemiError(mesh, traceProjector, exactScalar, projFn)
       const h = estimateMeshSize(mesh)
       results.push({ h, l2Err, h1Err })
     }
@@ -240,11 +240,11 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-      bcdtpp.computeBoundaryWeights()
+      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      traceProjector.computeBoundaryWeights()
 
-      const projFn = (tIdx, pt) => bcdtpp.projectHp(exactScalar, pt, tIdx, 0, 0)
-      const l2Err = computeL2ErrorScalar(mesh, bcdtpp, exactScalar, projFn)
+      const projFn = (tIdx, pt) => traceProjector.projectHp(exactScalar, pt, tIdx, 0, 0)
+      const l2Err = computeL2ErrorScalar(mesh, traceProjector, exactScalar, projFn)
       const h = estimateMeshSize(mesh)
       results.push({ h, l2Err })
     }
@@ -272,11 +272,11 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-      bcdtpp.computeBoundaryWeights()
+      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      traceProjector.computeBoundaryWeights()
 
-      const projFn = (tIdx, pt) => bcdtpp.projectHp(exactScalar, pt, tIdx, 3, 0)
-      const l2Err = computeL2ErrorScalar(mesh, bcdtpp, exactScalar, projFn)
+      const projFn = (tIdx, pt) => traceProjector.projectHp(exactScalar, pt, tIdx, 3, 0)
+      const l2Err = computeL2ErrorScalar(mesh, traceProjector, exactScalar, projFn)
       const h = estimateMeshSize(mesh)
       results.push({ h, l2Err })
     }
@@ -305,11 +305,11 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-      bcdtpp.computeBoundaryWeights()
+      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      traceProjector.computeBoundaryWeights()
 
-      const projFn = (tIdx, pt) => bcdtpp.projectHp(exactVector, pt, tIdx, 1, 0)
-      const l2Err = computeL2ErrorVector(mesh, bcdtpp, exactVector, projFn)
+      const projFn = (tIdx, pt) => traceProjector.projectHp(exactVector, pt, tIdx, 1, 0)
+      const l2Err = computeL2ErrorVector(mesh, traceProjector, exactVector, projFn)
       const h = estimateMeshSize(mesh)
       results.push({ h, l2Err })
     }

@@ -8,7 +8,7 @@ import { expect } from 'chai'
 import sinon from 'sinon'
 import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
-import { Bcdtpp } from '../src/lib/bcdtpp.js'
+import { TraceProjector } from '../src/lib/traceProjector.js'
 import { HigherOrderProjection } from '../src/lib/higher_order_projection.js'
 import { BoundaryWeightComputer } from '../src/lib/boundary_weight_computer.js'
 import { MeshRefinement } from '../src/lib/mesh_refinement.js'
@@ -18,7 +18,7 @@ import { generateUnitCubeMesh } from '../src/lib/mesh_generator.js'
 
 // Multi-tet mesh: exercises projection across shared faces/edges and
 // verifies commuting properties hold element-by-element.
-describe('Multi-tet Bcdtpp Projections', () => {
+describe('Multi-tet TraceProjector Projections', () => {
   const twoTet = {
     vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]],
     tetrahedra: [[0, 1, 2, 3], [1, 2, 3, 4]]
@@ -26,21 +26,21 @@ describe('Multi-tet Bcdtpp Projections', () => {
 
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(twoTet.vertices, twoTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
-    bcdtpp.buildPointLocator()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
+    traceProjector.buildPointLocator()
   })
 
   it('projectH1 is exact for constant on multi-tet mesh', () => {
     const u = () => 5
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
       const pt = mesh.getTetrahedronBarycenter(tIdx)
-      const result = bcdtpp.projectH1(u, pt, tIdx)
+      const result = traceProjector.projectH1(u, pt, tIdx)
       expect(result).to.be.closeTo(5, Math.pow(10, -6))
     }
   })
@@ -48,14 +48,14 @@ describe('Multi-tet Bcdtpp Projections', () => {
   it('projectL2 integrates constants exactly on multi-tet mesh', () => {
     const u = () => 7
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
-      const result = bcdtpp.projectL2(u, tIdx)
+      const result = traceProjector.projectL2(u, tIdx)
       expect(result).to.be.closeTo(7, Math.pow(10, -6))
     }
   })
 
   it('projectAtPoint finds correct tet in multi-tet mesh', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
-    const result = bcdtpp.projectAtPoint(u, [0.1, 0.1, 0.1], 0)
+    const result = traceProjector.projectAtPoint(u, [0.1, 0.1, 0.1], 0)
     expect(result.tIdx).to.equal(0)
     expect(Number.isFinite(result.value)).to.equal(true)
   })
@@ -64,7 +64,7 @@ describe('Multi-tet Bcdtpp Projections', () => {
     const v = (pt) => [2 * pt[0], 2 * pt[1], 2 * pt[2]]
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
       const pt = mesh.getTetrahedronBarycenter(tIdx)
-      const projV = bcdtpp.projectHdiv(v, pt, tIdx)
+      const projV = traceProjector.projectHdiv(v, pt, tIdx)
       expect(Array.isArray(projV)).to.equal(true)
       expect(projV.length).to.equal(3)
       projV.forEach((c) => expect(Number.isFinite(c)).to.equal(true))
@@ -80,15 +80,15 @@ describe('Multi-tet Bcdtpp Projections', () => {
     const h = 1e-5
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
       const pt = mesh.getTetrahedronBarycenter(tIdx)
-      const proj = bcdtpp.projectHdiv(v, pt, tIdx)
-      const projVx = bcdtpp.projectHdiv(v, [pt[0] + h, pt[1], pt[2]], tIdx)
-      const projVy = bcdtpp.projectHdiv(v, [pt[0], pt[1] + h, pt[2]], tIdx)
-      const projVz = bcdtpp.projectHdiv(v, [pt[0], pt[1], pt[2] + h], tIdx)
+      const proj = traceProjector.projectHdiv(v, pt, tIdx)
+      const projVx = traceProjector.projectHdiv(v, [pt[0] + h, pt[1], pt[2]], tIdx)
+      const projVy = traceProjector.projectHdiv(v, [pt[0], pt[1] + h, pt[2]], tIdx)
+      const projVz = traceProjector.projectHdiv(v, [pt[0], pt[1], pt[2] + h], tIdx)
       const numDiv =
         (projVx[0] - proj[0]) / h +
         (projVy[1] - proj[1]) / h +
         (projVz[2] - proj[2]) / h
-      const l2Div = bcdtpp.projectL2(divV, tIdx)
+      const l2Div = traceProjector.projectL2(divV, tIdx)
       expect(numDiv).to.be.closeTo(l2Div, Math.pow(10, -1))
     }
   })
@@ -98,7 +98,7 @@ describe('Multi-tet Bcdtpp Projections', () => {
     const gradU = [2, -3, 5]
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
       const pt = mesh.getTetrahedronBarycenter(tIdx)
-      const proj = bcdtpp.projectHcurl(u, pt, tIdx)
+      const proj = traceProjector.projectHcurl(u, pt, tIdx)
       expect(proj[0]).to.be.closeTo(gradU[0], Math.pow(10, -5))
       expect(proj[1]).to.be.closeTo(gradU[1], Math.pow(10, -5))
       expect(proj[2]).to.be.closeTo(gradU[2], Math.pow(10, -5))
@@ -165,29 +165,29 @@ describe('Higher-Order Edge Cases', () => {
 
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('p=1 H1 returns exact base projection', () => {
     const u = (pt) => pt[0] * pt[0] + pt[1] * pt[1]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const p0 = bcdtpp.projectHp(u, pt, 0, 0, 0)
-    const p1 = bcdtpp.projectHp(u, pt, 0, 0, 1)
+    const p0 = traceProjector.projectHp(u, pt, 0, 0, 0)
+    const p1 = traceProjector.projectHp(u, pt, 0, 0, 1)
     expect(p1).to.equal(p0)
   })
 
   it('p=2,3 H1 uses L2 enrichment', () => {
     const u = (pt) => pt[0] * pt[0] + pt[1] * pt[1]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const p0 = bcdtpp.projectHp(u, pt, 0, 0, 0)
-    const p2 = bcdtpp.projectHp(u, pt, 0, 0, 2)
-    const p3 = bcdtpp.projectHp(u, pt, 0, 0, 3)
+    const p0 = traceProjector.projectHp(u, pt, 0, 0, 0)
+    const p2 = traceProjector.projectHp(u, pt, 0, 0, 2)
+    const p3 = traceProjector.projectHp(u, pt, 0, 0, 3)
     expect(typeof p2).to.equal('number')
     expect(Number.isFinite(p2)).to.equal(true)
     expect(typeof p3).to.equal('number')
@@ -200,13 +200,13 @@ describe('Higher-Order Edge Cases', () => {
   it('throws for unimplemented l=1, p>0', () => {
     const u = (pt) => [pt[0], pt[1], pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    expect(() => bcdtpp.projectHp(u, pt, 0, 1, 1)).to.throw(/not yet implemented/)
+    expect(() => traceProjector.projectHp(u, pt, 0, 1, 1)).to.throw(/not yet implemented/)
   })
 
   it('throws for unimplemented l=2, p>0', () => {
     const u = (pt) => [pt[0], pt[1], pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    expect(() => bcdtpp.projectHp(u, pt, 0, 2, 1)).to.throw(/not yet implemented/)
+    expect(() => traceProjector.projectHp(u, pt, 0, 2, 1)).to.throw(/not yet implemented/)
   })
 })
 
@@ -219,34 +219,34 @@ describe('Projection Error Handling', () => {
 
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
-    bcdtpp.buildPointLocator()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
+    traceProjector.buildPointLocator()
   })
 
   it('throws for invalid tIdx type', () => {
-    expect(() => bcdtpp.projectH1(() => 1, [0, 0, 0], '0')).to.throw()
+    expect(() => traceProjector.projectH1(() => 1, [0, 0, 0], '0')).to.throw()
   })
 
   it('throws for out-of-range tIdx', () => {
-    expect(() => bcdtpp.projectH1(() => 1, [0, 0, 0], 5)).to.throw()
+    expect(() => traceProjector.projectH1(() => 1, [0, 0, 0], 5)).to.throw()
   })
 
   it('throws for negative tIdx', () => {
-    expect(() => bcdtpp.projectH1(() => 1, [0, 0, 0], -1)).to.throw()
+    expect(() => traceProjector.projectH1(() => 1, [0, 0, 0], -1)).to.throw()
   })
 
   it('throws for invalid point type', () => {
-    expect(() => bcdtpp.projectH1(() => 1, 'bad', 0)).to.throw(/point must be/)
+    expect(() => traceProjector.projectH1(() => 1, 'bad', 0)).to.throw(/point must be/)
   })
 
   it('throws for NaN in point', () => {
-    expect(() => bcdtpp.projectH1(() => 1, [0, NaN, 0], 0)).to.throw(/point must be/)
+    expect(() => traceProjector.projectH1(() => 1, [0, NaN, 0], 0)).to.throw(/point must be/)
   })
 })
 
@@ -396,18 +396,18 @@ describe('BoundaryWeightComputer fault isolation', () => {
 describe('Scalar inputs to vector projections', () => {
   const cubeMesh = generateUnitCubeMesh(2)
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     whitney = new Whitney(cubeMesh)
-    bcdtpp = new Bcdtpp(cubeMesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(cubeMesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('projectHcurl accepts scalar function on multi-tet mesh', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
     const pt = [0.5, 0.5, 0.5]
-    const result = bcdtpp.projectAtPoint(u, pt, 1)
+    const result = traceProjector.projectAtPoint(u, pt, 1)
     expect(Array.isArray(result.value)).to.equal(true)
     expect(result.value.length).to.equal(3)
     result.value.forEach((v) => expect(Number.isFinite(v)).to.equal(true))
@@ -416,7 +416,7 @@ describe('Scalar inputs to vector projections', () => {
   it('projectHdiv accepts scalar function on multi-tet mesh', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
     const pt = [0.5, 0.5, 0.5]
-    const result = bcdtpp.projectAtPoint(u, pt, 2)
+    const result = traceProjector.projectAtPoint(u, pt, 2)
     expect(Array.isArray(result.value)).to.equal(true)
     expect(result.value.length).to.equal(3)
     result.value.forEach((v) => expect(Number.isFinite(v)).to.equal(true))

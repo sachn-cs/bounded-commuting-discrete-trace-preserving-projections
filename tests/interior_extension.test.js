@@ -7,7 +7,7 @@
 import { expect } from 'chai'
 import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
-import { Bcdtpp } from '../src/lib/bcdtpp.js'
+import { TraceProjector } from '../src/lib/traceProjector.js'
 import { generateUnitCubeMesh } from '../src/lib/mesh_generator.js'
 
 const singleTet = {
@@ -20,19 +20,19 @@ const singleTet = {
 describe('Pi_ring^l interior projector', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('projectRing H1 is exact for linear on single tet', () => {
     const u = (pt) => 2 * pt[0] - 3 * pt[1] + 5 * pt[2]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const result = bcdtpp.projectRing(u, pt, 0, 0)
+    const result = traceProjector.projectRing(u, pt, 0, 0)
     // On a single tet all vertices are boundary, so projectRing returns 0.
     expect(result).to.equal(0)
   })
@@ -41,7 +41,7 @@ describe('Pi_ring^l interior projector', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2] + 1
     for (let i = 0; i < 4; i++) {
       const v = mesh.vertices[i]
-      const result = bcdtpp.projectRing(u, v, 0, 0)
+      const result = traceProjector.projectRing(u, v, 0, 0)
       expect(result).to.equal(0)
     }
   })
@@ -59,7 +59,7 @@ describe('Pi_ring^l interior projector', () => {
       const tIdx = mesh.edgeToFaces[eIdx].length > 0
         ? mesh.faceToTets[mesh.edgeToFaces[eIdx][0]][0]
         : 0
-      const result = bcdtpp.projectRing(u, mid, tIdx, 1)
+      const result = traceProjector.projectRing(u, mid, tIdx, 1)
       // Edge basis evaluated on the edge should give zero for interior DoFs.
       // Actually, the edge basis is non-zero on the edge, but the coefficient
       // for boundary edges is zero, so the tangential component along the edge
@@ -84,7 +84,7 @@ describe('Pi_ring^l interior projector', () => {
       const bary = mesh.getFaceBarycenter(fIdx)
       // Find a tet containing this face.
       const tIdx = mesh.faceToTets[fIdx][0]
-      const result = bcdtpp.projectRing(u, bary, tIdx, 2)
+      const result = traceProjector.projectRing(u, bary, tIdx, 2)
       const flux =
         result[0] * normal[0] +
         result[1] * normal[1] +
@@ -95,8 +95,8 @@ describe('Pi_ring^l interior projector', () => {
 
   it('projectRing L2 equals projectL2 (no boundary DoFs)', () => {
     const u = (pt) => pt[0] * pt[0] + pt[1] * pt[1]
-    const resultRing = bcdtpp.projectRing(u, [0.25, 0.25, 0.25], 0, 3)
-    const resultL2 = bcdtpp.projectL2(u, 0)
+    const resultRing = traceProjector.projectRing(u, [0.25, 0.25, 0.25], 0, 3)
+    const resultL2 = traceProjector.projectL2(u, 0)
     expect(resultRing).to.be.closeTo(resultL2, Math.pow(10, -10))
   })
 })
@@ -106,13 +106,13 @@ describe('Pi_ring^l interior projector', () => {
 describe('Discrete extension operator E^l', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('E^0 preserves boundary vertex values', () => {
@@ -122,7 +122,7 @@ describe('Discrete extension operator E^l', () => {
     }
     for (const vIdx of mesh.boundaryNodes) {
       const pt = mesh.vertices[vIdx]
-      const result = bcdtpp.extendBoundary(boundaryValues, pt, 0, 0)
+      const result = traceProjector.extendBoundary(boundaryValues, pt, 0, 0)
       expect(result).to.be.closeTo(boundaryValues.get(vIdx), Math.pow(10, -10))
     }
   })
@@ -140,7 +140,7 @@ describe('Discrete extension operator E^l', () => {
         (mesh.vertices[e[0]][2] + mesh.vertices[e[1]][2]) / 2
       ]
       const tIdx = mesh.faceToTets[mesh.edgeToFaces[eIdx][0]][0]
-      const result = bcdtpp.extendBoundary(boundaryEdgeDofs, mid, tIdx, 1)
+      const result = traceProjector.extendBoundary(boundaryEdgeDofs, mid, tIdx, 1)
       const edgeVec = [
         mesh.vertices[e[1]][0] - mesh.vertices[e[0]][0],
         mesh.vertices[e[1]][1] - mesh.vertices[e[0]][1],
@@ -166,9 +166,9 @@ describe('Discrete extension operator E^l', () => {
   it('E^2 decomposition: projectPartial equals extendBoundary of extracted DoFs', () => {
     const u = (pt) => [pt[0], pt[1], pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const partial = bcdtpp.projectPartial(u, pt, 0, 2)
-    const boundaryData = bcdtpp.extractBoundaryDofs(u, 2)
-    const extended = bcdtpp.extendBoundary(boundaryData, pt, 0, 2)
+    const partial = traceProjector.projectPartial(u, pt, 0, 2)
+    const boundaryData = traceProjector.extractBoundaryDofs(u, 2)
+    const extended = traceProjector.extendBoundary(boundaryData, pt, 0, 2)
     expect(partial[0]).to.be.closeTo(extended[0], Math.pow(10, -10))
     expect(partial[1]).to.be.closeTo(extended[1], Math.pow(10, -10))
     expect(partial[2]).to.be.closeTo(extended[2], Math.pow(10, -10))
@@ -180,30 +180,30 @@ describe('Discrete extension operator E^l', () => {
 describe('Decomposition Pi^l = Pi_ring^l + Pi_partial^l', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('H1: projectH1 = projectRing + projectPartial', () => {
     const u = (pt) => pt[0] * pt[0] + pt[1] * pt[1] + pt[2]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const full = bcdtpp.projectH1(u, pt, 0)
-    const ring = bcdtpp.projectRing(u, pt, 0, 0)
-    const partial = bcdtpp.projectPartial(u, pt, 0, 0)
+    const full = traceProjector.projectH1(u, pt, 0)
+    const ring = traceProjector.projectRing(u, pt, 0, 0)
+    const partial = traceProjector.projectPartial(u, pt, 0, 0)
     expect(full).to.be.closeTo(ring + partial, Math.pow(10, -10))
   })
 
   it('Hcurl: projectHcurl = projectRing + projectPartial', () => {
     const u = (pt) => [2 * pt[0], 2 * pt[1], 2 * pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const full = bcdtpp.projectHcurl(u, pt, 0)
-    const ring = bcdtpp.projectRing(u, pt, 0, 1)
-    const partial = bcdtpp.projectPartial(u, pt, 0, 1)
+    const full = traceProjector.projectHcurl(u, pt, 0)
+    const ring = traceProjector.projectRing(u, pt, 0, 1)
+    const partial = traceProjector.projectPartial(u, pt, 0, 1)
     expect(full[0]).to.be.closeTo(ring[0] + partial[0], Math.pow(10, -10))
     expect(full[1]).to.be.closeTo(ring[1] + partial[1], Math.pow(10, -10))
     expect(full[2]).to.be.closeTo(ring[2] + partial[2], Math.pow(10, -10))
@@ -212,9 +212,9 @@ describe('Decomposition Pi^l = Pi_ring^l + Pi_partial^l', () => {
   it('Hdiv: projectHdiv = projectRing + projectPartial', () => {
     const u = (pt) => [2 * pt[0], 2 * pt[1], 2 * pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const full = bcdtpp.projectHdiv(u, pt, 0)
-    const ring = bcdtpp.projectRing(u, pt, 0, 2)
-    const partial = bcdtpp.projectPartial(u, pt, 0, 2)
+    const full = traceProjector.projectHdiv(u, pt, 0)
+    const ring = traceProjector.projectRing(u, pt, 0, 2)
+    const partial = traceProjector.projectPartial(u, pt, 0, 2)
     expect(full[0]).to.be.closeTo(ring[0] + partial[0], Math.pow(10, -10))
     expect(full[1]).to.be.closeTo(ring[1] + partial[1], Math.pow(10, -10))
     expect(full[2]).to.be.closeTo(ring[2] + partial[2], Math.pow(10, -10))
@@ -226,13 +226,13 @@ describe('Decomposition Pi^l = Pi_ring^l + Pi_partial^l', () => {
 describe('Interior projector on multi-tet mesh', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = generateUnitCubeMesh(2)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('projectRing H1 is non-zero on cube mesh (has interior vertices)', () => {
@@ -241,7 +241,7 @@ describe('Interior projector on multi-tet mesh', () => {
     let hasNonZero = false
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
       const pt = mesh.getTetrahedronBarycenter(tIdx)
-      const val = bcdtpp.projectRing(u, pt, tIdx, 0)
+      const val = traceProjector.projectRing(u, pt, tIdx, 0)
       if (Math.abs(val) > 1e-12) {
         hasNonZero = true
         break
@@ -260,7 +260,7 @@ describe('Interior projector on multi-tet mesh', () => {
         (mesh.vertices[e[0]][2] + mesh.vertices[e[1]][2]) / 2
       ]
       const tIdx = mesh.faceToTets[mesh.edgeToFaces[eIdx][0]][0]
-      const result = bcdtpp.projectRing(u, mid, tIdx, 1)
+      const result = traceProjector.projectRing(u, mid, tIdx, 1)
       const edgeVec = [
         mesh.vertices[e[1]][0] - mesh.vertices[e[0]][0],
         mesh.vertices[e[1]][1] - mesh.vertices[e[0]][1],
@@ -280,7 +280,7 @@ describe('Interior projector on multi-tet mesh', () => {
       const normal = mesh.getFaceOutwardNormal(fIdx)
       const bary = mesh.getFaceBarycenter(fIdx)
       const tIdx = mesh.faceToTets[fIdx][0]
-      const result = bcdtpp.projectRing(u, bary, tIdx, 2)
+      const result = traceProjector.projectRing(u, bary, tIdx, 2)
       const flux =
         result[0] * normal[0] +
         result[1] * normal[1] +
@@ -295,13 +295,13 @@ describe('Interior projector on multi-tet mesh', () => {
 describe('Extension operator on multi-tet mesh', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = generateUnitCubeMesh(2)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('E^0 is exact at all boundary vertices', () => {
@@ -313,7 +313,7 @@ describe('Extension operator on multi-tet mesh', () => {
       const pt = mesh.vertices[vIdx]
       // Find a tet containing this vertex.
       const tIdx = mesh.vertexToTets[vIdx][0]
-      const result = bcdtpp.extendBoundary(boundaryValues, pt, tIdx, 0)
+      const result = traceProjector.extendBoundary(boundaryValues, pt, tIdx, 0)
       expect(result).to.be.closeTo(boundaryValues.get(vIdx), Math.pow(10, -10))
     }
   })
@@ -331,7 +331,7 @@ describe('Extension operator on multi-tet mesh', () => {
         (mesh.vertices[e[0]][2] + mesh.vertices[e[1]][2]) / 2
       ]
       const tIdx = mesh.faceToTets[mesh.edgeToFaces[eIdx][0]][0]
-      const result = bcdtpp.extendBoundary(boundaryEdgeDofs, mid, tIdx, 1)
+      const result = traceProjector.extendBoundary(boundaryEdgeDofs, mid, tIdx, 1)
       const edgeVec = [
         mesh.vertices[e[1]][0] - mesh.vertices[e[0]][0],
         mesh.vertices[e[1]][1] - mesh.vertices[e[0]][1],
@@ -357,9 +357,9 @@ describe('Extension operator on multi-tet mesh', () => {
     const u = (pt) => [pt[0], pt[1], pt[2]]
     for (let tIdx = 0; tIdx < Math.min(3, mesh.tetrahedronCount); tIdx++) {
       const pt = mesh.getTetrahedronBarycenter(tIdx)
-      const partial = bcdtpp.projectPartial(u, pt, tIdx, 2)
-      const boundaryData = bcdtpp.extractBoundaryDofs(u, 2)
-      const extended = bcdtpp.extendBoundary(boundaryData, pt, tIdx, 2)
+      const partial = traceProjector.projectPartial(u, pt, tIdx, 2)
+      const boundaryData = traceProjector.extractBoundaryDofs(u, 2)
+      const extended = traceProjector.extendBoundary(boundaryData, pt, tIdx, 2)
       expect(partial[0]).to.be.closeTo(extended[0], Math.pow(10, -10))
       expect(partial[1]).to.be.closeTo(extended[1], Math.pow(10, -10))
       expect(partial[2]).to.be.closeTo(extended[2], Math.pow(10, -10))
@@ -372,13 +372,13 @@ describe('Extension operator on multi-tet mesh', () => {
 describe('Commuting diagrams for ring + extension', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('tr^0(E^0(w)) = w for arbitrary boundary data', () => {
@@ -390,7 +390,7 @@ describe('Commuting diagrams for ring + extension', () => {
     ])
     for (const vIdx of mesh.boundaryNodes) {
       const pt = mesh.vertices[vIdx]
-      const val = bcdtpp.extendBoundary(boundaryValues, pt, 0, 0)
+      const val = traceProjector.extendBoundary(boundaryValues, pt, 0, 0)
       expect(val).to.be.closeTo(boundaryValues.get(vIdx), Math.pow(10, -10))
     }
   })
@@ -408,7 +408,7 @@ describe('Commuting diagrams for ring + extension', () => {
         (mesh.vertices[e[0]][2] + mesh.vertices[e[1]][2]) / 2
       ]
       const tIdx = mesh.faceToTets[mesh.edgeToFaces[eIdx][0]][0]
-      const val = bcdtpp.extendBoundary(boundaryEdgeDofs, mid, tIdx, 1)
+      const val = traceProjector.extendBoundary(boundaryEdgeDofs, mid, tIdx, 1)
       const edgeVec = [
         mesh.vertices[e[1]][0] - mesh.vertices[e[0]][0],
         mesh.vertices[e[1]][1] - mesh.vertices[e[0]][1],
@@ -433,9 +433,9 @@ describe('Commuting diagrams for ring + extension', () => {
   it('projectPartial Hdiv equals extendBoundary for an integrable vector field', () => {
     const u = (pt) => [2 * pt[0], 2 * pt[1], 2 * pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const partial = bcdtpp.projectPartial(u, pt, 0, 2)
-    const boundaryData = bcdtpp.extractBoundaryDofs(u, 2)
-    const extended = bcdtpp.extendBoundary(boundaryData, pt, 0, 2)
+    const partial = traceProjector.projectPartial(u, pt, 0, 2)
+    const boundaryData = traceProjector.extractBoundaryDofs(u, 2)
+    const extended = traceProjector.extendBoundary(boundaryData, pt, 0, 2)
     expect(partial[0]).to.be.closeTo(extended[0], Math.pow(10, -10))
     expect(partial[1]).to.be.closeTo(extended[1], Math.pow(10, -10))
     expect(partial[2]).to.be.closeTo(extended[2], Math.pow(10, -10))
@@ -447,28 +447,28 @@ describe('Commuting diagrams for ring + extension', () => {
 describe('Global projector Pi^l', () => {
   let mesh
   let whitney
-  let bcdtpp
+  let traceProjector
 
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
-    bcdtpp.computeBoundaryWeights()
+    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector.computeBoundaryWeights()
   })
 
   it('project l=0 matches projectH1 for p=0', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const a = bcdtpp.project(u, pt, 0, 0, 0)
-    const b = bcdtpp.projectH1(u, pt, 0)
+    const a = traceProjector.project(u, pt, 0, 0, 0)
+    const b = traceProjector.projectH1(u, pt, 0)
     expect(a).to.be.closeTo(b, Math.pow(10, -10))
   })
 
   it('project l=1 matches projectHcurl for p=0 with vector input', () => {
     const u = (pt) => [pt[0], pt[1], pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const a = bcdtpp.project(u, pt, 0, 1, 0)
-    const b = bcdtpp.projectHcurl(u, pt, 0)
+    const a = traceProjector.project(u, pt, 0, 1, 0)
+    const b = traceProjector.projectHcurl(u, pt, 0)
     expect(a[0]).to.be.closeTo(b[0], Math.pow(10, -10))
     expect(a[1]).to.be.closeTo(b[1], Math.pow(10, -10))
     expect(a[2]).to.be.closeTo(b[2], Math.pow(10, -10))
@@ -477,8 +477,8 @@ describe('Global projector Pi^l', () => {
   it('project l=1 matches projectHcurl for p=0 with scalar input', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const a = bcdtpp.project(u, pt, 0, 1, 0)
-    const b = bcdtpp.projectHcurl(u, pt, 0)
+    const a = traceProjector.project(u, pt, 0, 1, 0)
+    const b = traceProjector.projectHcurl(u, pt, 0)
     expect(a[0]).to.be.closeTo(b[0], Math.pow(10, -10))
     expect(a[1]).to.be.closeTo(b[1], Math.pow(10, -10))
     expect(a[2]).to.be.closeTo(b[2], Math.pow(10, -10))
@@ -487,8 +487,8 @@ describe('Global projector Pi^l', () => {
   it('project l=2 matches projectHdiv for p=0 with vector input', () => {
     const u = (pt) => [pt[0], pt[1], pt[2]]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const a = bcdtpp.project(u, pt, 0, 2, 0)
-    const b = bcdtpp.projectHdiv(u, pt, 0)
+    const a = traceProjector.project(u, pt, 0, 2, 0)
+    const b = traceProjector.projectHdiv(u, pt, 0)
     expect(a[0]).to.be.closeTo(b[0], Math.pow(10, -10))
     expect(a[1]).to.be.closeTo(b[1], Math.pow(10, -10))
     expect(a[2]).to.be.closeTo(b[2], Math.pow(10, -10))
@@ -497,8 +497,8 @@ describe('Global projector Pi^l', () => {
   it('project l=2 matches projectHdiv for p=0 with scalar input', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const a = bcdtpp.project(u, pt, 0, 2, 0)
-    const b = bcdtpp.projectHdiv(u, pt, 0)
+    const a = traceProjector.project(u, pt, 0, 2, 0)
+    const b = traceProjector.projectHdiv(u, pt, 0)
     expect(a[0]).to.be.closeTo(b[0], Math.pow(10, -10))
     expect(a[1]).to.be.closeTo(b[1], Math.pow(10, -10))
     expect(a[2]).to.be.closeTo(b[2], Math.pow(10, -10))
@@ -506,16 +506,16 @@ describe('Global projector Pi^l', () => {
 
   it('project l=3 matches projectL2 for p=0', () => {
     const u = (pt) => pt[0] + pt[1] + pt[2]
-    const a = bcdtpp.project(u, [0.25, 0.25, 0.25], 0, 3, 0)
-    const b = bcdtpp.projectL2(u, 0)
+    const a = traceProjector.project(u, [0.25, 0.25, 0.25], 0, 3, 0)
+    const b = traceProjector.projectL2(u, 0)
     expect(a).to.be.closeTo(b, Math.pow(10, -10))
   })
 
   it('project delegates to projectHp for p>0', () => {
     const u = (pt) => pt[0] * pt[0]
     const pt = mesh.getTetrahedronBarycenter(0)
-    const a = bcdtpp.project(u, pt, 0, 0, 2)
-    const b = bcdtpp.projectHp(u, pt, 0, 0, 2)
+    const a = traceProjector.project(u, pt, 0, 0, 2)
+    const b = traceProjector.projectHp(u, pt, 0, 0, 2)
     expect(a).to.be.closeTo(b, Math.pow(10, -10))
   })
 })
