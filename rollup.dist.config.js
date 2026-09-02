@@ -3,11 +3,11 @@ import babel from '@rollup/plugin-babel'
 import commonjs from '@rollup/plugin-commonjs'
 import terser from '@rollup/plugin-terser'
 
-const pkgName = 'bcdtpp'
+const pkgName = 'traceprojector'
 
 export default [
   {
-    input: 'src/lib/bcdtpp.js',
+    input: 'src/lib/traceprojector.js',
     output: {
       file: `dist/${pkgName}.esm.js`,
       format: 'esm',
@@ -20,7 +20,7 @@ export default [
     ]
   },
   {
-    input: 'src/lib/bcdtpp.js',
+    input: 'src/lib/traceprojector.js',
     output: {
       file: `dist/${pkgName}.cjs.js`,
       format: 'cjs',
@@ -34,11 +34,11 @@ export default [
     ]
   },
   {
-    input: 'src/lib/bcdtpp.js',
+    input: 'src/lib/traceprojector.js',
     output: {
       file: `dist/${pkgName}.umd.js`,
       format: 'umd',
-      name: 'Bcdtpp',
+      name: 'TraceProjector',
       sourcemap: true
     },
     plugins: [
