@@ -4,7 +4,7 @@
 
 ```
 src/lib/
-  traceprojector.js           — Main API: TraceProjector class
+  traceprojector.js           — Main API: Projector class
   mesh.js                     — Tetrahedral mesh topology, geometry, adjacency
   whitney.js                  — Barycentric coords, Whitney edge/face basis
   quadrature.js               — Gaussian quadrature on triangles, tetrahedra, lines
@@ -35,15 +35,15 @@ Mesh (vertices, tets)
     +---> Whitney (barycentric coords, basis)
     |         |
     |         v
-    |     TraceProjector (API facade)
+    |     Projector (API facade)
     |         |
-    |         +---> BoundaryWeightComputer
-    |         |         +---> MeshRefinement (Alfeld / Worsey-Farin)
-    |         |         +---> LocalSolver
+    |         +---> Weight
+    |         |         +---> Refinement (Alfeld / Worsey-Farin)
+    |         |         +---> Solver
     |         |
-    |         +---> PointLocator (AABB tree)
+    |         +---> Locator (AABB tree)
     |         |
-    |         +---> HigherOrderProjection (bubble / L2 enrichment)
+    |         +---> Bubble (bubble / L2 enrichment)
     |         |
     |         +---> Projectors (H1, Hcurl, Hdiv, L2)
     |                   +---> math_utils (LU, vector ops)
@@ -59,15 +59,15 @@ Each projector implements the same interface:
 project(u, point, tIdx, boundaryFaceSet) -> value
 ```
 
-- `H1Projector`: Vertex DoFs + boundary-weighted vertex values.
-- `HcurlProjector`: Edge DoFs + line-integral constraints on boundary edges.
-- `HdivProjector`: Face DoFs + normal-flux constraints on boundary faces.
-- `L2Projector`: Cell average via quadrature.
+- `H1`: Vertex DoFs + boundary-weighted vertex values.
+- `Hcurl`: Edge DoFs + line-integral constraints on boundary edges.
+- `Hdiv`: Face DoFs + normal-flux constraints on boundary faces.
+- `L2`: Cell average via quadrature.
 
 ## Key Design Decisions
 
 1. **Pure ES modules**: No CommonJS in source; bundlers handle multi-format output.
 2. **Zero external runtime dependencies**: All linear algebra is native JavaScript.
 3. **Immutable mesh inputs**: `Mesh` validates and freezes topology at construction.
-4. **Lazy caching**: `Whitney` caches per-tet barycentric gradients; `TraceProjector` caches boundary weights on demand.
-5. **Warning instead of throwing for local failures**: `BoundaryWeightComputer` and `HigherOrderProjection` warn on singular matrices so that a single bad element does not crash the entire mesh projection.
+4. **Lazy caching**: `Whitney` caches per-tet barycentric gradients; `Projector` caches boundary weights on demand.
+5. **Warning instead of throwing for local failures**: `Weight` and `Bubble` warn on singular matrices so that a single bad element does not crash the entire mesh projection.

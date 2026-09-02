@@ -1,24 +1,7 @@
 ## Classes
 
 <dl>
-<dt><a href="#BoundaryWeightComputer">BoundaryWeightComputer</a></dt>
-<dd><p>Computes boundary patch weights used by the trace-preserving projection
-operators.  For each boundary vertex, it assembles a surface-patch stiffness
-matrix on the Alfeld-split star, solves a constrained Laplace problem to
-obtain the weight functions psi, and collects edge tangents and face normals.</p>
-<p>Local failures (e.g. degenerate patches) emit warnings rather than throwing
-so that a single bad element does not halt the entire mesh projection.</p>
-</dd>
-<dt><a href="#MeshValidationError">MeshValidationError</a></dt>
-<dd><p>Thrown when mesh input data fails validation.</p>
-</dd>
-<dt><a href="#ProjectionError">ProjectionError</a></dt>
-<dd><p>Thrown when a projection cannot be computed.</p>
-</dd>
-<dt><a href="#SingularMatrixError">SingularMatrixError</a></dt>
-<dd><p>Thrown when a linear system is singular or numerically ill-conditioned.</p>
-</dd>
-<dt><a href="#HigherOrderProjection">HigherOrderProjection</a></dt>
+<dt><a href="#Bubble">Bubble</a></dt>
 <dd><p>Higher-order projection framework implementing Section 7 of the paper.</p>
 <p>For polynomial degree p &gt;= 4 on H^1 (l=0), the projection Pi^l_p is built
 from the lowest-order projection by adding bubble corrections on
@@ -28,14 +11,29 @@ L2 projection is used instead.</p>
 b = lambda_0 * lambda_1 * lambda_2 * lambda_3 already has degree 4),
 so projectHp returns the lowest-order projection without enrichment.</p>
 </dd>
-<dt><a href="#LocalSolver">LocalSolver</a></dt>
-<dd><p>Static utility for assembling surface-patch stiffness matrices and solving
-constrained linear systems during boundary weight computation.</p>
-<p>Constraints are enforced exactly with a Lagrange-multiplier (bordered)
-system, so every stiffness row is preserved and the recovered solution
-satisfies the original equations up to the constraint multiplier.</p>
+<dt><a href="#ValidateError">ValidateError</a></dt>
+<dd><p>Thrown when mesh input data fails validation.</p>
 </dd>
-<dt><a href="#MeshRefinement">MeshRefinement</a></dt>
+<dt><a href="#ProjectError">ProjectError</a></dt>
+<dd><p>Thrown when a projection cannot be computed.</p>
+</dd>
+<dt><a href="#SingularError">SingularError</a></dt>
+<dd><p>Thrown when a linear system is singular or numerically ill-conditioned.</p>
+</dd>
+<dt><a href="#Locator">Locator</a></dt>
+<dd><p>Axis-aligned bounding box (AABB) tree for O(log N) point-in-tetrahedron
+queries.</p>
+<p>The tree is built by recursively splitting tetrahedra along the longest
+axis at the median centroid, guaranteeing a balanced tree.  Leaf nodes
+store up to maxLeafSize tetrahedra and are tested exhaustively.</p>
+</dd>
+<dt><a href="#Mesh">Mesh</a></dt>
+<dd><p>Tetrahedral mesh data structure with topological connectivity and boundary
+extraction.  This class is intentionally a <em>pure data structure</em>; mesh
+refinement operators (Alfeld split, Worsey-Farin split) live in
+<a href="#Refinement">Refinement</a>.</p>
+</dd>
+<dt><a href="#Refinement">Refinement</a></dt>
 <dd><p>Mesh refinement operators implementing Alfeld face splitting (Section 6.1.3)
 and Worsey-Farin tetrahedron splitting (Section 6.1.4).</p>
 <p>This class mutates the underlying Mesh by appending barycenter vertices.
@@ -43,20 +41,14 @@ It stores the refinement data (sub-triangles, sub-tetrahedra) separately so
 that Mesh remains a pure data structure.</p>
 <p>Both splits are idempotent: calling them more than once is a no-op.</p>
 </dd>
-<dt><a href="#Mesh">Mesh</a></dt>
-<dd><p>Tetrahedral mesh data structure with topological connectivity and boundary
-extraction.  This class is intentionally a <em>pure data structure</em>; mesh
-refinement operators (Alfeld split, Worsey-Farin split) live in
-<a href="#MeshRefinement">MeshRefinement</a>.</p>
+<dt><a href="#Solver">Solver</a></dt>
+<dd><p>Static utility for assembling surface-patch stiffness matrices and solving
+constrained linear systems during boundary weight computation.</p>
+<p>Constraints are enforced exactly with a Lagrange-multiplier (bordered)
+system, so every stiffness row is preserved and the recovered solution
+satisfies the original equations up to the constraint multiplier.</p>
 </dd>
-<dt><a href="#PointLocator">PointLocator</a></dt>
-<dd><p>Axis-aligned bounding box (AABB) tree for O(log N) point-in-tetrahedron
-queries.</p>
-<p>The tree is built by recursively splitting tetrahedra along the longest
-axis at the median centroid, guaranteeing a balanced tree.  Leaf nodes
-store up to maxLeafSize tetrahedra and are tested exhaustively.</p>
-</dd>
-<dt><a href="#TraceProjector">TraceProjector</a></dt>
+<dt><a href="#Projector">Projector</a></dt>
 <dd><p>TRACEPROJECTOR: Bounded, Commuting, Discrete-trace Preserving Projections.</p>
 <p>Implements the de Rham projection operators Pi^l for l = 0,1,2,3 on
 tetrahedral meshes with boundary-aware trace preservation.</p>
@@ -64,6 +56,14 @@ tetrahedral meshes with boundary-aware trace preservation.</p>
 public API (getters for vertices, faces, edges, boundary flags, orientation
 signs, etc.).  Swapping in a different mesh implementation requires only that
 the new class implements the same getter interface.</p>
+</dd>
+<dt><a href="#Weight">Weight</a></dt>
+<dd><p>Computes boundary patch weights used by the trace-preserving projection
+operators.  For each boundary vertex, it assembles a surface-patch stiffness
+matrix on the Alfeld-split star, solves a constrained Laplace problem to
+obtain the weight functions psi, and collects edge tangents and face normals.</p>
+<p>Local failures (e.g. degenerate patches) emit warnings rather than throwing
+so that a single bad element does not halt the entire mesh projection.</p>
 </dd>
 <dt><a href="#Whitney">Whitney</a></dt>
 <dd><p>Barycentric coordinate computation and Whitney finite-element basis
@@ -73,21 +73,21 @@ functions on a tetrahedral mesh.</p>
 All per-tet geometry (edge matrix, inverse, gradients) is cached at
 construction time for efficient repeated evaluation.</p>
 </dd>
-<dt><a href="#H1Projector">H1Projector</a></dt>
+<dt><a href="#H1">H1</a></dt>
 <dd><p>Lowest-order H1 (l=0) vertex-based projector implementing Pi^0.</p>
 <p>Projects scalar functions onto the space of continuous piecewise-linear
 functions (P1 Lagrange) on a tetrahedral mesh.  Boundary vertices use
-weighted surface-patch integrals (computed by <a href="#BoundaryWeightComputer">BoundaryWeightComputer</a>)
+weighted surface-patch integrals (computed by <a href="#Weight">Weight</a>)
 to ensure trace preservation.  Interior vertices use nodal interpolation.</p>
 </dd>
-<dt><a href="#HcurlProjector">HcurlProjector</a></dt>
+<dt><a href="#Hcurl">Hcurl</a></dt>
 <dd><p>Lowest-order H(curl) (l=1) edge-based projector implementing Pi^1.</p>
 <p>Projects vector functions onto the Nédélec first-kind (Whitney 1-form)
 space.  Boundary edges use exact tangential-trace degrees of freedom
 (∫_e u·t ds); interior edges use midpoint evaluation of the tangential
 component.</p>
 </dd>
-<dt><a href="#HdivProjector">HdivProjector</a></dt>
+<dt><a href="#Hdiv">Hdiv</a></dt>
 <dd><p>Lowest-order H(div) (l=2) face-based projector implementing Pi^2.</p>
 <p>Projects vector functions onto the Raviart-Thomas (Whitney 2-form) space.
 Every face uses the same exact normal-flux degree of freedom
@@ -95,7 +95,7 @@ Every face uses the same exact normal-flux degree of freedom
 consistent coefficient with both adjacent tetrahedra and the discrete
 normal trace is continuous across the mesh.</p>
 </dd>
-<dt><a href="#L2Projector">L2Projector</a></dt>
+<dt><a href="#L2">L2</a></dt>
 <dd><p>Lowest-order L2 (l=3) cell-based projector implementing Pi^3.</p>
 <p>Projects scalar functions onto the space of piecewise constants (P0)
 on a tetrahedral mesh.  The projection is simply the volume-weighted
@@ -116,6 +116,14 @@ average of the function over each tetrahedron.</p>
 ## Functions
 
 <dl>
+<dt><a href="#generateUnitCubeMesh">generateUnitCubeMesh(n)</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
+<dd><p>Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
+Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
+the body diagonal from (0,0,0) to (1,1,1).</p>
+</dd>
+<dt><a href="#generateSingleTetMesh">generateSingleTetMesh()</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
+<dd><p>Generates a single reference tetrahedron mesh.</p>
+</dd>
 <dt><a href="#computeL2ErrorScalar">computeL2ErrorScalar(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
 <dd><p>Computes the L2 error between an exact function and its projection.</p>
 <p>err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx</p>
@@ -139,6 +147,39 @@ scaled to unit volume, or more simply the maximum edge length.</p>
 </dd>
 <dt><a href="#runConvergenceStudy">runConvergenceStudy(meshes, config)</a> ⇒ <code>Array.&lt;{h: number, l2Err: number, h1Err: (number|undefined), rateL2: (number|undefined), rateH1: (number|undefined)}&gt;</code></dt>
 <dd><p>Runs a convergence study on a sequence of meshes.</p>
+</dd>
+<dt><a href="#sort3">sort3(a, b, c)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Sorts three numbers in ascending order.</p>
+</dd>
+<dt><a href="#triangleQuadrature">triangleQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns quadrature points and weights on the reference triangle.</p>
+<p>Note: order 3 contains a negative weight (-9/16). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.</p>
+</dd>
+<dt><a href="#tetrahedronQuadrature">tetrahedronQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns quadrature points and weights on the reference tetrahedron.</p>
+<p>Note: order 3 contains a negative weight (-4/5). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.</p>
+</dd>
+<dt><a href="#integrateTriangle">integrateTriangle(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates a scalar function over a triangle using quadrature.</p>
+</dd>
+<dt><a href="#barycentricToCartesian">barycentricToCartesian(vertices, bary)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Maps barycentric coordinates to a Cartesian point.</p>
+</dd>
+<dt><a href="#lineQuadrature">lineQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns quadrature points and weights on the reference interval [0, 1].</p>
+</dd>
+<dt><a href="#compositeTetrahedronQuadrature">compositeTetrahedronQuadrature(order)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns a composite quadrature rule by subdividing the reference tetrahedron
+into 4 sub-tetrahedra via the centroid and applying the base rule on each.
+This increases the number of quadrature points, ensuring the mass matrix
+for polynomial spaces up to degree 3 remains full-rank.</p>
+</dd>
+<dt><a href="#integrateTetrahedron">integrateTetrahedron(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates a scalar function over a tetrahedron using quadrature.</p>
 </dd>
 <dt><a href="#dot">dot(a, b)</a> ⇒ <code>number</code></dt>
 <dd><p>Computes the dot product of two 3D vectors.</p>
@@ -192,52 +233,11 @@ reducing the risk of false singularity claims on poorly scaled systems.</p>
 <dt><a href="#numericalGradient">numericalGradient(u, pt, [h])</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
 <dd><p>Numerical gradient of a scalar function using central differences.</p>
 </dd>
-<dt><a href="#generateUnitCubeMesh">generateUnitCubeMesh(n)</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
-<dd><p>Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
-Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
-the body diagonal from (0,0,0) to (1,1,1).</p>
-</dd>
-<dt><a href="#generateSingleTetMesh">generateSingleTetMesh()</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
-<dd><p>Generates a single reference tetrahedron mesh.</p>
-</dd>
-<dt><a href="#sort3">sort3(a, b, c)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
-<dd><p>Sorts three numbers in ascending order.</p>
-</dd>
-<dt><a href="#triangleQuadrature">triangleQuadrature(order)</a> ⇒ <code>Object</code></dt>
-<dd><p>Returns quadrature points and weights on the reference triangle.</p>
-<p>Note: order 3 contains a negative weight (-9/16). Callers integrating
-non-smooth or sign-changing functions should consider a lower order or
-a different rule to avoid cancellation issues.</p>
-</dd>
-<dt><a href="#tetrahedronQuadrature">tetrahedronQuadrature(order)</a> ⇒ <code>Object</code></dt>
-<dd><p>Returns quadrature points and weights on the reference tetrahedron.</p>
-<p>Note: order 3 contains a negative weight (-4/5). Callers integrating
-non-smooth or sign-changing functions should consider a lower order or
-a different rule to avoid cancellation issues.</p>
-</dd>
-<dt><a href="#integrateTriangle">integrateTriangle(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
-<dd><p>Integrates a scalar function over a triangle using quadrature.</p>
-</dd>
-<dt><a href="#barycentricToCartesian">barycentricToCartesian(vertices, bary)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
-<dd><p>Maps barycentric coordinates to a Cartesian point.</p>
-</dd>
-<dt><a href="#lineQuadrature">lineQuadrature(order)</a> ⇒ <code>Object</code></dt>
-<dd><p>Returns quadrature points and weights on the reference interval [0, 1].</p>
-</dd>
-<dt><a href="#compositeTetrahedronQuadrature">compositeTetrahedronQuadrature(order)</a> ⇒ <code>Object</code></dt>
-<dd><p>Returns a composite quadrature rule by subdividing the reference tetrahedron
-into 4 sub-tetrahedra via the centroid and applying the base rule on each.
-This increases the number of quadrature points, ensuring the mass matrix
-for polynomial spaces up to degree 3 remains full-rank.</p>
-</dd>
-<dt><a href="#integrateTetrahedron">integrateTetrahedron(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
-<dd><p>Integrates a scalar function over a tetrahedron using quadrature.</p>
-</dd>
 </dl>
 
-<a name="LocalSolver"></a>
+<a name="Solver"></a>
 
-## LocalSolver
+## Solver
 Static utility for assembling surface-patch stiffness matrices and solving
 constrained linear systems during boundary weight computation.
 
@@ -247,25 +247,25 @@ satisfies the original equations up to the constraint multiplier.
 
 **Kind**: global class  
 
-* [LocalSolver](#LocalSolver)
-    * [.assembleSurfaceStiffness(vertices, triangles)](#LocalSolver.assembleSurfaceStiffness) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
-    * [.solveWithConstraint(K, b, [onWarning])](#LocalSolver.solveWithConstraint) ⇒ <code>Array.&lt;number&gt;</code>
+* [Solver](#Solver)
+    * [.assembleSurfaceStiffness(vertices, triangles)](#Solver.assembleSurfaceStiffness) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
+    * [.solveWithConstraint(K, b, [onWarning])](#Solver.solveWithConstraint) ⇒ <code>Array.&lt;number&gt;</code>
 
-<a name="LocalSolver.assembleSurfaceStiffness"></a>
+<a name="Solver.assembleSurfaceStiffness"></a>
 
-### LocalSolver.assembleSurfaceStiffness(vertices, triangles) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
+### Solver.assembleSurfaceStiffness(vertices, triangles) ⇒ <code>Array.&lt;!Array.&lt;number&gt;&gt;</code>
 Assembles the surface stiffness matrix for -Delta_Gamma.
 
-**Kind**: static method of [<code>LocalSolver</code>](#LocalSolver)  
+**Kind**: static method of [<code>Solver</code>](#Solver)  
 
 | Param | Type |
 | --- | --- |
 | vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
 | triangles | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
 
-<a name="LocalSolver.solveWithConstraint"></a>
+<a name="Solver.solveWithConstraint"></a>
 
-### LocalSolver.solveWithConstraint(K, b, [onWarning]) ⇒ <code>Array.&lt;number&gt;</code>
+### Solver.solveWithConstraint(K, b, [onWarning]) ⇒ <code>Array.&lt;number&gt;</code>
 Solves K x = b with a mean-zero constraint sum(x) = 0.
 
 The constraint is enforced exactly with a Lagrange multiplier lambda by
@@ -278,7 +278,7 @@ and discarding the multiplier.  Unlike row replacement this keeps every
 stiffness row intact and preserves symmetry, so x satisfies K x = b up to
 a constant (lambda * 1) and is the true constrained solution.
 
-**Kind**: static method of [<code>LocalSolver</code>](#LocalSolver)  
+**Kind**: static method of [<code>Solver</code>](#Solver)  
 
 | Param | Type | Description |
 | --- | --- | --- |
@@ -296,6 +296,25 @@ a constant (lambda * 1) and is the true constrained solution.
 n for which n! fits in a JavaScript Number without overflowing.
 
 **Kind**: global constant  
+<a name="generateUnitCubeMesh"></a>
+
+## generateUnitCubeMesh(n) ⇒ [<code>Mesh</code>](#Mesh)
+Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
+Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
+the body diagonal from (0,0,0) to (1,1,1).
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| n | <code>number</code> | Number of cubes per axis (creates n^3 cubes). |
+
+<a name="generateSingleTetMesh"></a>
+
+## generateSingleTetMesh() ⇒ [<code>Mesh</code>](#Mesh)
+Generates a single reference tetrahedron mesh.
+
+**Kind**: global function  
 <a name="computeL2ErrorScalar"></a>
 
 ## computeL2ErrorScalar(mesh, traceProjector, exactFn, projFn) ⇒ <code>number</code>
@@ -308,7 +327,7 @@ err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
 | Param | Type | Description |
 | --- | --- | --- |
 | mesh | [<code>Mesh</code>](#Mesh) |  |
-| traceProjector | [<code>TraceProjector</code>](#TraceProjector) |  |
+| traceProjector | [<code>Projector</code>](#Projector) |  |
 | exactFn | <code>function</code> |  |
 | projFn | <code>function</code> | Function taking (tIdx, point) and returning the projected value at that point. |
 
@@ -324,7 +343,7 @@ err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
 | Param | Type |
 | --- | --- |
 | mesh | [<code>Mesh</code>](#Mesh) | 
-| traceProjector | [<code>TraceProjector</code>](#TraceProjector) | 
+| traceProjector | [<code>Projector</code>](#Projector) | 
 | exactFn | <code>function</code> | 
 | projFn | <code>function</code> | 
 
@@ -341,7 +360,7 @@ err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
 | Param | Type |
 | --- | --- |
 | mesh | [<code>Mesh</code>](#Mesh) | 
-| traceProjector | [<code>TraceProjector</code>](#TraceProjector) | 
+| traceProjector | [<code>Projector</code>](#Projector) | 
 | exactFn | <code>function</code> | 
 | projFn | <code>function</code> | 
 
@@ -389,6 +408,117 @@ Runs a convergence study on a sequence of meshes.
 | [config.l] | <code>number</code> | Form degree (default 0). |
 | [config.p] | <code>number</code> | Polynomial degree (default 0). |
 | [config.quadratureOrder] | <code>number</code> | Quadrature order (default 3). |
+
+<a name="sort3"></a>
+
+## sort3(a, b, c) ⇒ <code>Array.&lt;number&gt;</code>
+Sorts three numbers in ascending order.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| a | <code>number</code> | 
+| b | <code>number</code> | 
+| c | <code>number</code> | 
+
+<a name="triangleQuadrature"></a>
+
+## triangleQuadrature(order) ⇒ <code>Object</code>
+Returns quadrature points and weights on the reference triangle.
+
+Note: order 3 contains a negative weight (-9/16). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
+
+<a name="tetrahedronQuadrature"></a>
+
+## tetrahedronQuadrature(order) ⇒ <code>Object</code>
+Returns quadrature points and weights on the reference tetrahedron.
+
+Note: order 3 contains a negative weight (-4/5). Callers integrating
+non-smooth or sign-changing functions should consider a lower order or
+a different rule to avoid cancellation issues.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
+
+<a name="integrateTriangle"></a>
+
+## integrateTriangle(vertices, fn, [order]) ⇒ <code>number</code>
+Integrates a scalar function over a triangle using quadrature.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Triangle vertices. |
+| fn | <code>function</code> | Scalar function. |
+| [order] | <code>number</code> | Quadrature order (default 2). |
+
+<a name="barycentricToCartesian"></a>
+
+## barycentricToCartesian(vertices, bary) ⇒ <code>Array.&lt;number&gt;</code>
+Maps barycentric coordinates to a Cartesian point.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Vertices of the element. |
+| bary | <code>Array.&lt;number&gt;</code> | Barycentric coordinates. |
+
+<a name="lineQuadrature"></a>
+
+## lineQuadrature(order) ⇒ <code>Object</code>
+Returns quadrature points and weights on the reference interval [0, 1].
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
+
+**Example**  
+```js
+const {points, weights} = lineQuadrature(2);
+const integral = points.reduce((s, x, i) => s + weights[i] * f(x), 0);
+```
+<a name="compositeTetrahedronQuadrature"></a>
+
+## compositeTetrahedronQuadrature(order) ⇒ <code>Object</code>
+Returns a composite quadrature rule by subdividing the reference tetrahedron
+into 4 sub-tetrahedra via the centroid and applying the base rule on each.
+This increases the number of quadrature points, ensuring the mass matrix
+for polynomial spaces up to degree 3 remains full-rank.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| order | <code>number</code> | Base quadrature order. |
+
+<a name="integrateTetrahedron"></a>
+
+## integrateTetrahedron(vertices, fn, [order]) ⇒ <code>number</code>
+Integrates a scalar function over a tetrahedron using quadrature.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Tetrahedron vertices. |
+| fn | <code>function</code> | Scalar function. |
+| [order] | <code>number</code> | Quadrature order (default 2). |
 
 <a name="dot"></a>
 
@@ -594,134 +724,4 @@ Numerical gradient of a scalar function using central differences.
 | u | <code>function</code> | 
 | pt | <code>Array.&lt;number&gt;</code> | 
 | [h] | <code>number</code> | 
-
-<a name="generateUnitCubeMesh"></a>
-
-## generateUnitCubeMesh(n) ⇒ [<code>Mesh</code>](#Mesh)
-Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
-Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
-the body diagonal from (0,0,0) to (1,1,1).
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| n | <code>number</code> | Number of cubes per axis (creates n^3 cubes). |
-
-<a name="generateSingleTetMesh"></a>
-
-## generateSingleTetMesh() ⇒ [<code>Mesh</code>](#Mesh)
-Generates a single reference tetrahedron mesh.
-
-**Kind**: global function  
-<a name="sort3"></a>
-
-## sort3(a, b, c) ⇒ <code>Array.&lt;number&gt;</code>
-Sorts three numbers in ascending order.
-
-**Kind**: global function  
-
-| Param | Type |
-| --- | --- |
-| a | <code>number</code> | 
-| b | <code>number</code> | 
-| c | <code>number</code> | 
-
-<a name="triangleQuadrature"></a>
-
-## triangleQuadrature(order) ⇒ <code>Object</code>
-Returns quadrature points and weights on the reference triangle.
-
-Note: order 3 contains a negative weight (-9/16). Callers integrating
-non-smooth or sign-changing functions should consider a lower order or
-a different rule to avoid cancellation issues.
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
-
-<a name="tetrahedronQuadrature"></a>
-
-## tetrahedronQuadrature(order) ⇒ <code>Object</code>
-Returns quadrature points and weights on the reference tetrahedron.
-
-Note: order 3 contains a negative weight (-4/5). Callers integrating
-non-smooth or sign-changing functions should consider a lower order or
-a different rule to avoid cancellation issues.
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
-
-<a name="integrateTriangle"></a>
-
-## integrateTriangle(vertices, fn, [order]) ⇒ <code>number</code>
-Integrates a scalar function over a triangle using quadrature.
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Triangle vertices. |
-| fn | <code>function</code> | Scalar function. |
-| [order] | <code>number</code> | Quadrature order (default 2). |
-
-<a name="barycentricToCartesian"></a>
-
-## barycentricToCartesian(vertices, bary) ⇒ <code>Array.&lt;number&gt;</code>
-Maps barycentric coordinates to a Cartesian point.
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Vertices of the element. |
-| bary | <code>Array.&lt;number&gt;</code> | Barycentric coordinates. |
-
-<a name="lineQuadrature"></a>
-
-## lineQuadrature(order) ⇒ <code>Object</code>
-Returns quadrature points and weights on the reference interval [0, 1].
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| order | <code>number</code> | Target polynomial exactness (1, 2, or 3). |
-
-**Example**  
-```js
-const {points, weights} = lineQuadrature(2);
-const integral = points.reduce((s, x, i) => s + weights[i] * f(x), 0);
-```
-<a name="compositeTetrahedronQuadrature"></a>
-
-## compositeTetrahedronQuadrature(order) ⇒ <code>Object</code>
-Returns a composite quadrature rule by subdividing the reference tetrahedron
-into 4 sub-tetrahedra via the centroid and applying the base rule on each.
-This increases the number of quadrature points, ensuring the mass matrix
-for polynomial spaces up to degree 3 remains full-rank.
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| order | <code>number</code> | Base quadrature order. |
-
-<a name="integrateTetrahedron"></a>
-
-## integrateTetrahedron(vertices, fn, [order]) ⇒ <code>number</code>
-Integrates a scalar function over a tetrahedron using quadrature.
-
-**Kind**: global function  
-
-| Param | Type | Description |
-| --- | --- | --- |
-| vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Tetrahedron vertices. |
-| fn | <code>function</code> | Scalar function. |
-| [order] | <code>number</code> | Quadrature order (default 2). |
 

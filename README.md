@@ -65,14 +65,14 @@ const mesh = new Mesh(vertices, tetrahedra)
 ### 2. Initialize Projections
 
 ```javascript
-import { Whitney, TraceProjector } from 'traceprojector'
+import { Whitney, Projector } from 'traceprojector'
 
 const whitney = new Whitney(mesh)
-const traceprojector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+const traceprojector = new Projector(mesh, whitney, { quadratureOrder: 3 })
 
 // Compute boundary weights (Alfeld splits + local solves)
 traceprojector.computeBoundaryWeights()
-traceprojector.buildPointLocator()
+traceprojector.buildLocator()
 ```
 
 ### 3. Project a Function
@@ -113,12 +113,12 @@ const result = traceprojector.projectAtPoint(u, [0.1, 0.2, 0.3], /* l */ 0, /* p
 
 | Symbol | Type | Description |
 |--------|------|-------------|
-| `TraceProjector` | class | Main projection orchestrator |
+| `Projector` | class | Main projection orchestrator |
 | `Mesh` | class | Tetrahedral mesh topology and geometry |
 | `Whitney` | class | Barycentric coordinates and Whitney basis |
-| `PointLocator` | class | AABB tree point-in-tet locator |
+| `Locator` | class | AABB tree point-in-tet locator |
 | `quadrature` | module | Gaussian quadrature utilities |
-| `mathUtils` | module | Linear algebra primitives |
+| `utils` | module | Linear algebra primitives |
 | `projectH1` | method | `Pi^0` (vertex-based) projection |
 | `projectHcurl` | method | `Pi^1` (edge-based) projection |
 | `projectHdiv` | method | `Pi^2` (face-based) projection |
@@ -136,15 +136,15 @@ include hand-written `.d.ts` files.
 ### Project a function on a unit cube mesh
 
 ```javascript
-import { Mesh, Whitney, TraceProjector } from 'traceprojector'
+import { Mesh, Whitney, Projector } from 'traceprojector'
 
 const cube = unitCubeTetrahedralMesh(8, 8, 8)
 const mesh = new Mesh(cube.vertices, cube.tets)
 const whitney = new Whitney(mesh)
-const traceprojector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+const traceprojector = new Projector(mesh, whitney, { quadratureOrder: 3 })
 
 traceprojector.computeBoundaryWeights()
-traceprojector.buildPointLocator()
+traceprojector.buildLocator()
 
 const f = (p) => Math.sin(p[0]) * Math.cos(p[1]) * Math.exp(p[2])
 const val = traceprojector.projectH1(f, [0.25, 0.5, 0.5], 0)
@@ -197,7 +197,7 @@ The UMD bundle is available via CDN:
 ```html
 <script src="https://cdn.jsdelivr.net/npm/traceprojector/dist/traceprojector.umd.js"></script>
 <script>
-  const { Mesh, Whitney, TraceProjector } = window.TraceProjector
+  const { Mesh, Whitney, Projector } = window.TraceProjector
 </script>
 ```
 
@@ -231,7 +231,7 @@ See [docs/math.md](docs/math.md) for the full mathematical exposition (de Rham c
 ```
 src/
   lib/
-    traceprojector.js                 — Main projection class (TraceProjector)
+    traceprojector.js                 — Main projection class (Projector)
     mesh.js                   — Tetrahedral mesh topology & splits
     whitney.js                — Whitney forms and barycentric utilities
     quadrature.js             — Gaussian quadrature for triangles & tetrahedra
@@ -337,7 +337,7 @@ npm run build:full           # Build + regenerate API docs
 ### High Priority
 
 - **Vector-valued higher-order projections** (`l = 1, 2`, `p > 0`): Nédélec and Raviart-Thomas enrichment for `H(curl)` and `H(div)`.
-- **Adaptive mesh refinement support**: Integrate `MeshRefinement` APIs into `TraceProjector` so boundary weights can be recomputed incrementally as the mesh refines.
+- **Adaptive mesh refinement support**: Integrate `Refinement` APIs into `Projector` so boundary weights can be recomputed incrementally as the mesh refines.
 
 ### Medium Priority
 

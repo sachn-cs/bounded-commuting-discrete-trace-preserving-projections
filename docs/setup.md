@@ -34,17 +34,17 @@ You should see all tests pass (166 tests as of v0.1.0).
 ### ESM (modern bundlers, Node.js)
 
 ```javascript
-import { Mesh, Whitney, TraceProjector } from 'traceprojector'
+import { Mesh, Whitney, Projector } from 'traceprojector'
 
 const mesh = new Mesh(vertices, tetrahedra)
 const whitney = new Whitney(mesh)
-const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+const traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
 ```
 
 ### CommonJS (legacy Node.js)
 
 ```javascript
-const { Mesh, Whitney, TraceProjector } = require('traceprojector')
+const { Mesh, Whitney, Projector } = require('traceprojector')
 ```
 
 ### Browser (UMD via CDN)
@@ -52,7 +52,7 @@ const { Mesh, Whitney, TraceProjector } = require('traceprojector')
 ```html
 <script src="https://cdn.jsdelivr.net/npm/traceprojector/dist/traceprojector.umd.js"></script>
 <script>
-  const { Mesh, Whitney, TraceProjector } = window.TraceProjector;
+  const { Mesh, Whitney, Projector } = window.Projector;
 </script>
 ```
 

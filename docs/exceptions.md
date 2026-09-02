@@ -19,7 +19,7 @@ Thrown by `Mesh` when input data is geometrically or topologically invalid.
 
 ## ProjectionError
 
-Thrown by `TraceProjector` and projector classes when arguments are invalid or operations cannot proceed.
+Thrown by `Projector` and projector classes when arguments are invalid or operations cannot proceed.
 
 | Condition | Message pattern |
 |-----------|-----------------|
@@ -43,9 +43,9 @@ Thrown by linear algebra routines in `math_utils.js` when a matrix is singular o
 
 **Recovery**: Check mesh validity (degenerate elements cause singular Jacobians) or verify the input matrix.
 
-## BoundaryWeightComputer Warnings
+## Weight Warnings
 
-`BoundaryWeightComputer` logs warnings via an injected `warn` function rather than throwing, because per-vertex failures should not halt the entire computation.
+`Weight` logs warnings via an injected `warn` function rather than throwing, because per-vertex failures should not halt the entire computation.
 
 | Code | Message | Meaning |
 |------|---------|---------|
@@ -54,9 +54,9 @@ Thrown by linear algebra routines in `math_utils.js` when a matrix is singular o
 
 **Recovery**: Inspect the mesh near the reported vertex for degenerate or inverted elements.
 
-## HigherOrderProjection Warnings
+## Bubble Warnings
 
-`HigherOrderProjection` also warns rather than throwing for singular mass matrices.
+`Bubble` also warns rather than throwing for singular mass matrices.
 
 | Code | Message | Meaning |
 |------|---------|---------|

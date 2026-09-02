@@ -20,6 +20,14 @@ All notable changes to this project will be documented in this file.
 - Use a single mesh-orientation normal flux for all H(div) faces with Whitney-basis sign alignment, giving a continuous normal trace across interior faces
 - Fall back to the cell mean (never a silent zero) when a higher-order L2 mass matrix solve is singular
 
+### Changed (naming conventions)
+
+- Rename all source files to single-word names (`math_utils` → `utils`, `local_solver` → `solver`, `boundary_weight_computer` → `weight`, `higher_order_projection` → `bubble`, `mesh_refinement` → `refinement`, `mesh_generator` → `generator`, `point_locator` → `locator`, `convergence_harness` → `harness`, `projectors/*_projector` → `projectors/h1|hcurl|hdiv|l2`)
+- Rename all classes to single words (`TraceProjector` → `Projector`, `H1Projector` → `H1`, `HcurlProjector` → `Hcurl`, `HdivProjector` → `Hdiv`, `L2Projector` → `L2`, `BoundaryWeightComputer` → `Weight`, `LocalSolver` → `Solver`, `HigherOrderProjection` → `Bubble`, `MeshRefinement` → `Refinement`, `PointLocator` → `Locator`, `MeshValidationError` → `ValidateError`, `ProjectionError` → `ProjectError`, `SingularMatrixError` → `SingularError`)
+- Drop all `#private` markers in favor of plain leading-underscore internal members
+- Rename package export subpaths (`./utils`, `./locator`) and the `PointLocator`/`buildPointLocator` API to `Locator`/`buildLocator`
+- Fix case-sensitivity bug in tests importing `traceProjector.js` (now `traceprojector.js`)
+
 ## [0.0.7](https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/commit/e9b643c) — 2026-06-20
 
 - Add comprehensive test suite: interior projector, convergence harness, local solver, mesh generator, point locator, Whitney basis, quadrature, coverage edge cases
