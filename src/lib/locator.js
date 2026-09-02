@@ -20,7 +20,7 @@ export class Locator {
   constructor (mesh, maxLeafSize = 8) {
     this.mesh = mesh
     this.maxLeafSize = maxLeafSize
-    this.root = this._buildTree(mesh.tetrahedra.map((_, i) => i))
+    this.root = this.buildTree(mesh.tetrahedra.map((_, i) => i))
   }
 
   /**
@@ -32,8 +32,8 @@ export class Locator {
    * @param {!Array<number>} tetIndices
    * @return {!Object}
    */
-  _buildTree (tetIndices) {
-    const aabb = this._computeAabb(tetIndices)
+  buildTree (tetIndices) {
+    const aabb = this.computeAabb(tetIndices)
 
     if (tetIndices.length <= this.maxLeafSize) {
       return { aabb, tets: tetIndices, left: null, right: null }
@@ -51,8 +51,8 @@ export class Locator {
     // Sort by centroid along the longest axis and split at the median.
     const sorted = [...tetIndices]
     sorted.sort((a, b) => {
-      const ca = this._getTetrahedronCenter(a)[axis]
-      const cb = this._getTetrahedronCenter(b)[axis]
+      const ca = this.getTetrahedronCenter(a)[axis]
+      const cb = this.getTetrahedronCenter(b)[axis]
       return ca - cb
     })
     const midIdx = Math.floor(sorted.length / 2)
@@ -62,8 +62,8 @@ export class Locator {
     return {
       aabb,
       tets: null,
-      left: this._buildTree(leftTets),
-      right: this._buildTree(rightTets)
+      left: this.buildTree(leftTets),
+      right: this.buildTree(rightTets)
     }
   }
 
@@ -71,7 +71,7 @@ export class Locator {
    * @param {!Array<number>} tetIndices
    * @return {{min: !Array<number>, max: !Array<number>}}
    */
-  _computeAabb (tetIndices) {
+  computeAabb (tetIndices) {
     let minX = Infinity
     let minY = Infinity
     let minZ = Infinity
@@ -109,7 +109,7 @@ export class Locator {
    * @param {number} tIdx
    * @return {!Array<number>}
    */
-  _getTetrahedronCenter (tIdx) {
+  getTetrahedronCenter (tIdx) {
     const tet = this.mesh.tetrahedra[tIdx]
     let cx = 0
     let cy = 0
@@ -128,7 +128,7 @@ export class Locator {
    * @param {{min: !Array<number>, max: !Array<number>}} aabb
    * @return {boolean}
    */
-  _pointInAabb (point, aabb) {
+  pointInAabb (point, aabb) {
     return (
       point[0] >= aabb.min[0] &&
       point[0] <= aabb.max[0] &&
@@ -151,7 +151,7 @@ export class Locator {
    * @param {!Array<number>} point
    * @return {?Array<number>}
    */
-  _barycentricInTetrahedron (tIdx, point) {
+  barycentricInTetrahedron (tIdx, point) {
     const tet = this.mesh.tetrahedra[tIdx]
     const v = tet.map((i) => this.mesh.vertices[i])
     const e0 = [v[0][0] - v[3][0], v[0][1] - v[3][1], v[0][2] - v[3][2]]
@@ -193,7 +193,7 @@ export class Locator {
    * @return {{tIdx: number, bary: !Array<number>}|null}
    */
   findTetrahedron (point) {
-    return this._findInNode(this.root, point)
+    return this.findInNode(this.root, point)
   }
 
   /**
@@ -201,14 +201,14 @@ export class Locator {
    * @param {!Array<number>} point
    * @return {{tIdx: number, bary: !Array<number>}|null}
    */
-  _findInNode (node, point) {
-    if (!this._pointInAabb(point, node.aabb)) {
+  findInNode (node, point) {
+    if (!this.pointInAabb(point, node.aabb)) {
       return null
     }
 
     if (node.tets) {
       for (const tIdx of node.tets) {
-        const bary = this._barycentricInTetrahedron(tIdx, point)
+        const bary = this.barycentricInTetrahedron(tIdx, point)
         if (bary) {
           return { tIdx, bary }
         }
@@ -216,10 +216,10 @@ export class Locator {
       return null
     }
 
-    const leftResult = this._findInNode(node.left, point)
+    const leftResult = this.findInNode(node.left, point)
     if (leftResult) {
       return leftResult
     }
-    return this._findInNode(node.right, point)
+    return this.findInNode(node.right, point)
   }
 }

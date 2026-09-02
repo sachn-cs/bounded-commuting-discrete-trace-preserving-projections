@@ -57,7 +57,7 @@ export class Bubble {
    * @return {!Array<!Array<number>>} List of exponent tuples [a,b,c,d]
    *   such that basis function = lambda0^a * lambda1^b * lambda2^c * lambda3^d * b.
    */
-  _getBubbleExponents (p) {
+  getBubbleExponents (p) {
     if (this.bubbleExponentCache.has(p)) {
       return this.bubbleExponentCache.get(p)
     }
@@ -85,7 +85,7 @@ export class Bubble {
    * @return {number}
    * @private
    */
-  static _pow (base, exp) {
+  static pow (base, exp) {
     if (base === 0 && exp === 0) return 1
     return Math.pow(base, exp)
   }
@@ -97,15 +97,15 @@ export class Bubble {
    * @return {!Array<number>}
    */
   evaluateBubbleBasis (bary, p) {
-    const exponents = this._getBubbleExponents(p)
+    const exponents = this.getBubbleExponents(p)
     if (exponents.length === 0) {
       return []
     }
     return exponents.map(([a, b, c, d]) =>
-      Bubble._pow(bary[0], a) *
-      Bubble._pow(bary[1], b) *
-      Bubble._pow(bary[2], c) *
-      Bubble._pow(bary[3], d)
+      Bubble.pow(bary[0], a) *
+      Bubble.pow(bary[1], b) *
+      Bubble.pow(bary[2], c) *
+      Bubble.pow(bary[3], d)
     )
   }
 
@@ -116,7 +116,7 @@ export class Bubble {
    * @return {!Array<!Array<number>>}
    */
   assembleBubbleMass (tIdx, p) {
-    const exponents = this._getBubbleExponents(p)
+    const exponents = this.getBubbleExponents(p)
     if (exponents.length === 0) {
       return []
     }
@@ -149,7 +149,7 @@ export class Bubble {
    * @return {!Array<number>}
    */
   assembleBubbleRhs (tIdx, p, residualFn) {
-    const exponents = this._getBubbleExponents(p)
+    const exponents = this.getBubbleExponents(p)
     if (exponents.length === 0) {
       return []
     }
@@ -224,7 +224,7 @@ export class Bubble {
    * @return {!Array<!Array<number>>}
    * @private
    */
-  _getBernsteinExponents (p) {
+  getBernsteinExponents (p) {
     const exponents = []
     for (let i = 0; i <= p; i++) {
       for (let j = 0; j <= p - i; j++) {
@@ -244,7 +244,7 @@ export class Bubble {
    * @return {number}
    * @private
    */
-  static _multinomial (p, exps) {
+  static multinomial (p, exps) {
     let result = 1
     let remaining = p
     for (const e of exps) {
@@ -264,15 +264,15 @@ export class Bubble {
    * @return {!Array<number>}
    */
   evaluateBernsteinBasis (bary, p) {
-    const exponents = this._getBernsteinExponents(p)
+    const exponents = this.getBernsteinExponents(p)
     return exponents.map(([i, j, k, l]) => {
-      const coeff = Bubble._multinomial(p, [i, j, k, l])
+      const coeff = Bubble.multinomial(p, [i, j, k, l])
       return (
         coeff *
-        Bubble._pow(bary[0], i) *
-        Bubble._pow(bary[1], j) *
-        Bubble._pow(bary[2], k) *
-        Bubble._pow(bary[3], l)
+        Bubble.pow(bary[0], i) *
+        Bubble.pow(bary[1], j) *
+        Bubble.pow(bary[2], k) *
+        Bubble.pow(bary[3], l)
       )
     })
   }
@@ -287,7 +287,7 @@ export class Bubble {
    * @return {!Array<!Array<number>>}
    * @private
    */
-  _assembleBernsteinMass (p, vol, exponents) {
+  assembleBernsteinMass (p, vol, exponents) {
     const n = exponents.length
     const pFact = factorial(p)
     const denom = factorial(2 * p + 3)
@@ -336,7 +336,7 @@ export class Bubble {
    * @return {!Array<number>} Coefficients of the Bernstein basis.
    */
   solveL2Projection (tIdx, p, u) {
-    const exponents = this._getBernsteinExponents(p)
+    const exponents = this.getBernsteinExponents(p)
     const n = exponents.length
     if (n === 0) {
       return []
@@ -365,7 +365,7 @@ export class Bubble {
       f[i] *= vol
     }
 
-    const M = this._assembleBernsteinMass(p, vol, exponents)
+    const M = this.assembleBernsteinMass(p, vol, exponents)
     try {
       return luSolve(M, f)
     } catch (e) {
@@ -375,7 +375,7 @@ export class Bubble {
         message:
           `Bubble: L2 solve failed for tet ${tIdx}, p=${p}: ${e.message}`
       })
-      const mean = this._cellMean(tIdx, u)
+      const mean = this.cellMean(tIdx, u)
       return new Array(n).fill(mean)
     }
   }
@@ -388,7 +388,7 @@ export class Bubble {
    * @return {number}
    * @private
    */
-  _cellMean (tIdx, u) {
+  cellMean (tIdx, u) {
     const { bary, weights } = compositeTetrahedronQuadrature(this.quadratureOrder)
     const verts = this.mesh.tetrahedra[tIdx].map((i) => this.mesh.vertices[i])
     let mean = 0

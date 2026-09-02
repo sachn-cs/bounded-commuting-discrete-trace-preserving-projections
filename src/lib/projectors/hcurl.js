@@ -49,7 +49,7 @@ export class Hcurl {
     for (let e = 0; e < 6; e++) {
       const [i, j] = localEdges[e]
       const globalEdge = [tet[i], tet[j]]
-      const eKey = this._edgeKey(globalEdge)
+      const eKey = this.edgeKey(globalEdge)
       const eIdx = this.mesh.getEdgeIndex(eKey)
       const sigma = this.mesh.getTetEdgeSign(tIdx, e)
 
@@ -110,7 +110,7 @@ export class Hcurl {
    */
   computeInteriorEdgeCoeff (u, tIdx, i, j, isScalar) {
     const tet = this.mesh.getTetrahedra()[tIdx]
-    const mid = this._midpoint(tet[i], tet[j])
+    const mid = this.midpoint(tet[i], tet[j])
     const edgeVec = subtract(
       this.mesh.getVertices()[tet[j]],
       this.mesh.getVertices()[tet[i]]
@@ -143,7 +143,7 @@ export class Hcurl {
     for (let e = 0; e < 6; e++) {
       const [i, j] = localEdges[e]
       const globalEdge = [tet[i], tet[j]]
-      const eKey = this._edgeKey(globalEdge)
+      const eKey = this.edgeKey(globalEdge)
       const eIdx = this.mesh.getEdgeIndex(eKey)
       if (boundaryEdgeSet.has(eIdx)) {
         continue
@@ -176,7 +176,7 @@ export class Hcurl {
     for (let e = 0; e < 6; e++) {
       const [i, j] = localEdges[e]
       const globalEdge = [tet[i], tet[j]]
-      const eKey = this._edgeKey(globalEdge)
+      const eKey = this.edgeKey(globalEdge)
       const eIdx = this.mesh.getEdgeIndex(eKey)
       const sigma = this.mesh.getTetEdgeSign(tIdx, e)
       if (!boundaryEdgeSet.has(eIdx) || !boundaryData.has(eIdx)) {
@@ -194,7 +194,7 @@ export class Hcurl {
    * @param {!Array<number>} e
    * @return {number}
    */
-  _edgeKey (e) {
+  edgeKey (e) {
     const a = e[0]
     const b = e[1]
     const vc = this.mesh.getOriginalVertexCount()
@@ -206,7 +206,7 @@ export class Hcurl {
    * @param {number} vJ
    * @return {!Array<number>}
    */
-  _midpoint (vI, vJ) {
+  midpoint (vI, vJ) {
     const a = this.mesh.getVertices()[vI]
     const b = this.mesh.getVertices()[vJ]
     return [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2, (a[2] + b[2]) / 2]

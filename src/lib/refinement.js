@@ -10,9 +10,9 @@
  */
 export class Refinement {
   /** @type {boolean} */
-  _alfeldDone
+  alfeldDone
   /** @type {boolean} */
-  _worseyFarinDone
+  worseyFarinDone
 
   /**
    * @param {!Mesh} mesh
@@ -25,8 +25,8 @@ export class Refinement {
     /** @type {!Map<number, {parentFaceIdx: number, triangles: !Array<!Array<number>>}>} */
     this.faceToAlfeld = new Map()
     this.worseyFarinTetrahedra = []
-    this._alfeldDone = false
-    this._worseyFarinDone = false
+    this.alfeldDone = false
+    this.worseyFarinDone = false
   }
 
   /**
@@ -36,7 +36,7 @@ export class Refinement {
    * Idempotent: no-op if already called.
    */
   computeAlfeldSplit () {
-    if (this._alfeldDone) {
+    if (this.alfeldDone) {
       return
     }
     this.faceBarycenters = new Array(this.mesh.faces.length).fill(-1)
@@ -59,7 +59,7 @@ export class Refinement {
       this.faceToAlfeld.set(fIdx, entry)
     })
     this.mesh.vertexCount = this.mesh.vertices.length
-    this._alfeldDone = true
+    this.alfeldDone = true
   }
 
   /**
@@ -70,7 +70,7 @@ export class Refinement {
    * Idempotent: no-op if already called.
    */
   computeWorseyFarinSplit () {
-    if (this._worseyFarinDone) {
+    if (this.worseyFarinDone) {
       return
     }
     if (this.faceBarycenters.length === 0) {
@@ -115,6 +115,6 @@ export class Refinement {
       })
     }
     this.mesh.vertexCount = this.mesh.vertices.length
-    this._worseyFarinDone = true
+    this.worseyFarinDone = true
   }
 }

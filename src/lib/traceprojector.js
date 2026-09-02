@@ -31,35 +31,35 @@ import { L2 } from './projectors/l2.js'
  */
 export class Projector {
   /** @type {!Mesh} */
-  _mesh
+  mesh
   /** @type {!Whitney} */
-  _whitney
+  whitney
   /** @type {number} */
-  _order
+  order
   /** @type {function(string): void} */
-  _onWarning
+  onWarning
   /** @type {Locator|null} */
-  _locator
+  locator
   /** @type {!Refinement} */
-  _refinement
+  refinement
   /** @type {!Weight} */
-  _weight
+  weight
   /** @type {!Bubble} */
-  _bubble
+  bubble
   /** @type {!H1} */
-  _h1
+  h1
   /** @type {!Hcurl} */
-  _hcurl
+  hcurl
   /** @type {!Hdiv} */
-  _hdiv
+  hdiv
   /** @type {!L2} */
-  _l2
+  l2
   /** @type {!Map<number, {nodeMap: !Array<number>, psi: !Array<number>}>} */
-  _vertexData
+  vertexData
   /** @type {!Set<number>} */
-  _edgeSet
+  edgeSet
   /** @type {!Set<number>} */
-  _faceSet
+  faceSet
 
   /**
    * @param {!Mesh} mesh
@@ -68,50 +68,50 @@ export class Projector {
    * @param {number=} options.quadratureOrder - Quadrature order for integration (default 3).
    */
   constructor (mesh, whitney, options = {}) {
-    this._mesh = mesh
-    this._whitney = whitney
-    this._order = options.quadratureOrder || 3
-    this._onWarning =
+    this.mesh = mesh
+    this.whitney = whitney
+    this.order = options.quadratureOrder || 3
+    this.onWarning =
       options.onWarning || ((ctx) => console.warn(ctx.message ?? ctx))
-    this._vertexData = new Map()
-    this._locator = null
+    this.vertexData = new Map()
+    this.locator = null
 
-    this._refinement = new Refinement(this._mesh)
-    this._weight = new Weight(
-      this._mesh,
-      this._refinement,
-      this._onWarning
+    this.refinement = new Refinement(this.mesh)
+    this.weight = new Weight(
+      this.mesh,
+      this.refinement,
+      this.onWarning
     )
 
-    this._edgeSet = new Set(this._mesh.getBoundaryEdges())
-    this._faceSet = new Set(this._mesh.getBoundaryFaces())
+    this.edgeSet = new Set(this.mesh.getBoundaryEdges())
+    this.faceSet = new Set(this.mesh.getBoundaryFaces())
 
-    this._bubble = new Bubble(
-      this._mesh,
-      this._whitney,
-      this._order,
-      this._onWarning
+    this.bubble = new Bubble(
+      this.mesh,
+      this.whitney,
+      this.order,
+      this.onWarning
     )
 
-    this._h1 = new H1(this._mesh, this._whitney, this._refinement)
-    this._hcurl = new Hcurl(this._mesh, this._whitney, this._order)
-    this._hdiv = new Hdiv(this._mesh, this._whitney, this._order)
-    this._l2 = new L2(this._mesh, this._whitney, this._order)
+    this.h1 = new H1(this.mesh, this.whitney, this.refinement)
+    this.hcurl = new Hcurl(this.mesh, this.whitney, this.order)
+    this.hdiv = new Hdiv(this.mesh, this.whitney, this.order)
+    this.l2 = new L2(this.mesh, this.whitney, this.order)
 
-    this._validateMesh()
+    this.validateMesh()
   }
 
   /** @private */
-  _validateMesh () {
+  validateMesh () {
     let degenerateCount = 0
-    for (let tIdx = 0; tIdx < this._mesh.tetrahedronCount; tIdx++) {
-      const vol = this._mesh.getVolume(tIdx)
+    for (let tIdx = 0; tIdx < this.mesh.tetrahedronCount; tIdx++) {
+      const vol = this.mesh.getVolume(tIdx)
       if (vol < 1e-12) {
         degenerateCount++
       }
     }
     if (degenerateCount > 0) {
-      this._onWarning({
+      this.onWarning({
         code: 'TRACEPROJECTOR_DEGENERATE_MESH',
         severity: 'warn',
         message:
@@ -123,7 +123,7 @@ export class Projector {
 
   /** Quadrature order used for integrations. @return {number} */
   get quadratureOrder () {
-    return this._order
+    return this.order
   }
 
   /**
@@ -133,23 +133,23 @@ export class Projector {
    * Must be called before any operation that requires spatial queries.
    */
   buildLocator () {
-    this._locator = new Locator(this._mesh)
+    this.locator = new Locator(this.mesh)
   }
 
   /** @private */
-  _validateTetIdx (tIdx) {
+  validateTetIdx (tIdx) {
     if (typeof tIdx !== 'number' || !Number.isInteger(tIdx)) {
       throw new ProjectError(`tIdx must be an integer, got ${tIdx}`)
     }
-    if (tIdx < 0 || tIdx >= this._mesh.tetrahedronCount) {
+    if (tIdx < 0 || tIdx >= this.mesh.tetrahedronCount) {
       throw new ProjectError(
-        `tIdx=${tIdx} out of range [0, ${this._mesh.tetrahedronCount - 1}]`
+        `tIdx=${tIdx} out of range [0, ${this.mesh.tetrahedronCount - 1}]`
       )
     }
   }
 
   /** @private */
-  static _validatePoint (point) {
+  static validatePoint (point) {
     if (!Array.isArray(point) || point.length !== 3 ||
         !point.every((n) => typeof n === 'number' && Number.isFinite(n))) {
       throw new ProjectError(
@@ -168,11 +168,11 @@ export class Projector {
    * projectHdiv).
    */
   computeBoundaryWeights () {
-    if (this._refinement.alfeldTriangles.length === 0) {
-      this._refinement.computeWorseyFarinSplit()
+    if (this.refinement.alfeldTriangles.length === 0) {
+      this.refinement.computeWorseyFarinSplit()
     }
-    const weights = this._weight.compute()
-    this._vertexData = weights.vertexBoundaryData
+    const weights = this.weight.compute()
+    this.vertexData = weights.vertexBoundaryData
   }
 
   /**
@@ -183,9 +183,9 @@ export class Projector {
    * @return {number}
    */
   projectH1 (u, point, tIdx) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
-    return this._h1.project(u, point, tIdx, this._vertexData)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
+    return this.h1.project(u, point, tIdx, this.vertexData)
   }
 
   /**
@@ -198,9 +198,9 @@ export class Projector {
    * @return {!Array<number>}
    */
   projectHcurl (u, point, tIdx) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
-    return this._hcurl.project(u, point, tIdx, this._edgeSet)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
+    return this.hcurl.project(u, point, tIdx, this.edgeSet)
   }
 
   /**
@@ -213,9 +213,9 @@ export class Projector {
    * @return {!Array<number>}
    */
   projectHdiv (u, point, tIdx) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
-    return this._hdiv.project(u, point, tIdx, this._faceSet)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
+    return this.hdiv.project(u, point, tIdx, this.faceSet)
   }
 
   /**
@@ -225,8 +225,8 @@ export class Projector {
    * @return {number}
    */
   projectL2 (u, tIdx) {
-    this._validateTetIdx(tIdx)
-    return this._l2.project(u, tIdx)
+    this.validateTetIdx(tIdx)
+    return this.l2.project(u, tIdx)
   }
 
   /**
@@ -239,8 +239,8 @@ export class Projector {
    * @return {(number|!Array<number>)}
    */
   projectHp (u, point, tIdx, l, p) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
     if (p === 0) {
       const dispatch = {
         0: () => this.projectH1(u, point, tIdx),
@@ -258,13 +258,13 @@ export class Projector {
       if (p === 1) {
         return this.projectH1(u, point, tIdx)
       }
-      const bary = this._whitney.getBarycentric(tIdx, point)
-      const coeffs = this._bubble.solveL2Projection(
+      const bary = this.whitney.getBarycentric(tIdx, point)
+      const coeffs = this.bubble.solveL2Projection(
         tIdx,
         p,
         u
       )
-      return this._bubble.evaluateL2Projection(
+      return this.bubble.evaluateL2Projection(
         coeffs,
         bary,
         p
@@ -272,13 +272,13 @@ export class Projector {
     }
 
     if (l === 3) {
-      const bary = this._whitney.getBarycentric(tIdx, point)
-      const coeffs = this._bubble.solveL2Projection(
+      const bary = this.whitney.getBarycentric(tIdx, point)
+      const coeffs = this.bubble.solveL2Projection(
         tIdx,
         p,
         u
       )
-      return this._bubble.evaluateL2Projection(
+      return this.bubble.evaluateL2Projection(
         coeffs,
         bary,
         p
@@ -309,8 +309,8 @@ export class Projector {
    * @return {(number|!Array<number>)}
    */
   project (u, point, tIdx, l, p = 0) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
     if (p !== 0) {
       return this.projectHp(u, point, tIdx, l, p)
     }
@@ -325,7 +325,7 @@ export class Projector {
     const partial = this.extendBoundary(boundaryData, point, tIdx, l)
 
     // Step 3: Pi_ring^l — project the residual (u - Pi_partial^l) on interior DoFs.
-    const samplePt = this._mesh.getTetrahedronBarycenter(tIdx)
+    const samplePt = this.mesh.getTetrahedronBarycenter(tIdx)
     const isScalar = typeof u(samplePt) === 'number'
 
     const w = (l === 0 || !isScalar) ? u : numericalGradient.bind(this, u)
@@ -364,16 +364,16 @@ export class Projector {
   extractBoundaryDofs (u, l) {
     const result = new Map()
     if (l === 0) {
-      for (const vIdx of this._mesh.getBoundaryNodes()) {
-        result.set(vIdx, this._h1.computeBoundaryIntegralH1(vIdx, u, this._vertexData))
+      for (const vIdx of this.mesh.getBoundaryNodes()) {
+        result.set(vIdx, this.h1.computeBoundaryIntegralH1(vIdx, u, this.vertexData))
       }
     } else if (l === 1) {
-      for (const eIdx of this._mesh.getBoundaryEdges()) {
-        result.set(eIdx, this._hcurl.computeEdgeDof(u, eIdx))
+      for (const eIdx of this.mesh.getBoundaryEdges()) {
+        result.set(eIdx, this.hcurl.computeEdgeDof(u, eIdx))
       }
     } else if (l === 2) {
-      for (const fIdx of this._mesh.getBoundaryFaces()) {
-        result.set(fIdx, this._hdiv.computeFaceDof(u, fIdx))
+      for (const fIdx of this.mesh.getBoundaryFaces()) {
+        result.set(fIdx, this.hdiv.computeFaceDof(u, fIdx))
       }
     }
     return result
@@ -388,13 +388,13 @@ export class Projector {
    * @return {(number|!Array<number>)}
    */
   projectRing (u, point, tIdx, l) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
     const dispatch = {
-      0: () => this._h1.projectRing(u, point, tIdx),
-      1: () => this._hcurl.projectRing(u, point, tIdx, this._edgeSet),
-      2: () => this._hdiv.projectRing(u, point, tIdx, this._faceSet),
-      3: () => this._l2.project(u, tIdx)
+      0: () => this.h1.projectRing(u, point, tIdx),
+      1: () => this.hcurl.projectRing(u, point, tIdx, this.edgeSet),
+      2: () => this.hdiv.projectRing(u, point, tIdx, this.faceSet),
+      3: () => this.l2.project(u, tIdx)
     }
     if (!Object.hasOwn(dispatch, l)) {
       throw new ProjectError(`Invalid form degree l=${l}`)
@@ -411,12 +411,12 @@ export class Projector {
    * @return {(number|!Array<number>)}
    */
   extendBoundary (boundaryData, point, tIdx, l) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
     const dispatch = {
-      0: () => this._h1.extendBoundary(boundaryData, point, tIdx),
-      1: () => this._hcurl.extendBoundary(boundaryData, point, tIdx, this._edgeSet),
-      2: () => this._hdiv.extendBoundary(boundaryData, point, tIdx, this._faceSet)
+      0: () => this.h1.extendBoundary(boundaryData, point, tIdx),
+      1: () => this.hcurl.extendBoundary(boundaryData, point, tIdx, this.edgeSet),
+      2: () => this.hdiv.extendBoundary(boundaryData, point, tIdx, this.faceSet)
     }
     if (!Object.hasOwn(dispatch, l)) {
       throw new ProjectError(
@@ -435,8 +435,8 @@ export class Projector {
    * @return {(number|!Array<number>)}
    */
   projectPartial (u, point, tIdx, l) {
-    Projector._validatePoint(point)
-    this._validateTetIdx(tIdx)
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
     const boundaryData = this.extractBoundaryDofs(u, l)
     return this.extendBoundary(boundaryData, point, tIdx, l)
   }
@@ -450,11 +450,11 @@ export class Projector {
    * @return {{value: (number|!Array<number>), tIdx: number, bary: !Array<number>}}
    */
   projectAtPoint (u, point, l = 0, p = 0) {
-    Projector._validatePoint(point)
-    if (!this._locator) {
+    Projector.validatePoint(point)
+    if (!this.locator) {
       this.buildLocator()
     }
-    const found = this._locator.findTetrahedron(point)
+    const found = this.locator.findTetrahedron(point)
     if (!found) {
       throw new ProjectError(
         `Point [${point.join(', ')}] not found in any tetrahedron`

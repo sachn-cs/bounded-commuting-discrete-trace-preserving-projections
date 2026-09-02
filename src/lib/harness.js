@@ -12,7 +12,7 @@ import { Whitney } from './whitney.js'
 /**
  * Computes the L2 error between an exact function and its projection.
  *
-   * err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
+   * err_L2^2 = ΣT ∫_T |u_exact - u_proj|^2 dx
    *
  * @param {!Mesh} mesh
  * @param {!Projector} traceProjector
@@ -38,7 +38,7 @@ export function computeL2ErrorScalar (mesh, traceProjector, exactFn, projFn) {
 /**
  * Computes the L2 error for a vector-valued projection.
  *
-   * err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
+   * err_L2^2 = ΣT ∫_T |v_exact - v_proj|^2 dx
    *
  * @param {!Mesh} mesh
  * @param {!Projector} traceProjector
@@ -67,7 +67,7 @@ export function computeL2ErrorVector (mesh, traceProjector, exactFn, projFn) {
  * Computes the H1 semi-norm error (L2 error of the gradient) for scalar projections.
  * Uses numerical differentiation of the exact function for comparison.
  *
-   * err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
+   * err_H1^2 = ΣT ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
    *
  * @param {!Mesh} mesh
  * @param {!Projector} traceProjector

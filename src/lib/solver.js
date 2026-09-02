@@ -27,7 +27,7 @@ export class Solver {
 
     triangles.forEach((tri) => {
       const v = tri.map((i) => vertices[i])
-      const ke = Solver._triangleStiffness(v)
+      const ke = Solver.triangleStiffness(v)
 
       for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
@@ -45,7 +45,7 @@ export class Solver {
    * @return {!Array<!Array<number>>}
    * @private
    */
-  static _triangleStiffness (v) {
+  static triangleStiffness (v) {
     const v1 = subtract(v[1], v[0])
     const v2 = subtract(v[2], v[0])
 
