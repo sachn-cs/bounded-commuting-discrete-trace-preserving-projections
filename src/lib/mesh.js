@@ -34,30 +34,30 @@ function sort3 (a, b, c) {
 
 export class Mesh {
   /** @type {!Map<number, number>} */
-  #edgeKeyToIndex
+  _edgeKeyToIndex
   /** @type {!Map<number, number>} */
-  #faceKeyToIndex
+  _faceKeyToIndex
   /** @type {!Array<!Array<number>>} */
-  #tetEdgeSigns
+  _tetEdgeSigns
   /** @type {!Array<!Array<number>>} */
-  #tetFaceSigns
+  _tetFaceSigns
   /** @type {!Array<number>} */
-  #volumeCache
+  _volumeCache
   /** @type {!Array<number>} */
-  #faceAreaCache
+  _faceAreaCache
   /** @type {!Array<!Array<number>>} */
-  #faceNormalCache
+  _faceNormalCache
   /** @type {!Array<!Array<number>>} */
-  #faceBarycenterCache
+  _faceBarycenterCache
   /** @type {!Array<!Array<number>>} */
-  #tetBarycenterCache
+  _tetBarycenterCache
 
   /**
    * @param {!Array<!Array<number>>} vertices - Vertex coordinates.
    * @param {!Array<!Array<number>>} tetrahedra - Tetrahedron vertex indices.
    */
   constructor (vertices, tetrahedra) {
-    Mesh.#validateInput(vertices, tetrahedra)
+    Mesh._validateInput(vertices, tetrahedra)
     this.vertices = vertices
     this.tetrahedra = tetrahedra
     this.originalVertexCount = vertices.length
@@ -77,20 +77,20 @@ export class Mesh {
     this.vertexToBoundaryFaces = []
     this.vertexToEdges = []
 
-    this.#edgeKeyToIndex = new Map()
-    this.#faceKeyToIndex = new Map()
-    this.#tetEdgeSigns = []
-    this.#tetFaceSigns = []
+    this._edgeKeyToIndex = new Map()
+    this._faceKeyToIndex = new Map()
+    this._tetEdgeSigns = []
+    this._tetFaceSigns = []
 
-    this.#volumeCache = []
-    this.#faceAreaCache = []
-    this.#faceNormalCache = []
-    this.#faceBarycenterCache = []
-    this.#tetBarycenterCache = []
+    this._volumeCache = []
+    this._faceAreaCache = []
+    this._faceNormalCache = []
+    this._faceBarycenterCache = []
+    this._tetBarycenterCache = []
 
-    this.#buildTopology()
-    this.#computeOrientationSigns()
-    this.#precomputeGeometry()
+    this._buildTopology()
+    this._computeOrientationSigns()
+    this._precomputeGeometry()
   }
 
   /**
@@ -99,7 +99,7 @@ export class Mesh {
    * @param {!Array<!Array<number>>} tetrahedra
    * @private
    */
-  static #validateInput (vertices, tetrahedra) {
+  static _validateInput (vertices, tetrahedra) {
     if (!Array.isArray(vertices) || vertices.length === 0) {
       throw new MeshValidationError('vertices must be a non-empty array')
     }
@@ -144,20 +144,20 @@ export class Mesh {
   }
 
   /** @private */
-  #precomputeGeometry () {
+  _precomputeGeometry () {
     for (let tIdx = 0; tIdx < this.tetrahedronCount; tIdx++) {
-      this.#volumeCache[tIdx] = this.#computeVolume(tIdx)
-      this.#tetBarycenterCache[tIdx] = this.#computeTetrahedronBarycenter(tIdx)
+      this._volumeCache[tIdx] = this._computeVolume(tIdx)
+      this._tetBarycenterCache[tIdx] = this._computeTetrahedronBarycenter(tIdx)
     }
     for (let fIdx = 0; fIdx < this.faces.length; fIdx++) {
-      this.#faceAreaCache[fIdx] = this.#computeFaceArea(fIdx)
-      this.#faceNormalCache[fIdx] = this.#computeFaceOutwardNormal(fIdx)
-      this.#faceBarycenterCache[fIdx] = this.#computeFaceBarycenter(fIdx)
+      this._faceAreaCache[fIdx] = this._computeFaceArea(fIdx)
+      this._faceNormalCache[fIdx] = this._computeFaceOutwardNormal(fIdx)
+      this._faceBarycenterCache[fIdx] = this._computeFaceBarycenter(fIdx)
     }
   }
 
   /** @private */
-  #computeFaceArea (fIdx) {
+  _computeFaceArea (fIdx) {
     const f = this.faces[fIdx]
     return triangleArea(
       this.vertices[f[0]],
@@ -167,7 +167,7 @@ export class Mesh {
   }
 
   /** @private */
-  #computeFaceBarycenter (fIdx) {
+  _computeFaceBarycenter (fIdx) {
     const f = this.faces[fIdx]
     const v = f.map((i) => this.vertices[i])
     return [
@@ -178,7 +178,7 @@ export class Mesh {
   }
 
   /** @private */
-  #computeTetrahedronBarycenter (tIdx) {
+  _computeTetrahedronBarycenter (tIdx) {
     const t = this.tetrahedra[tIdx]
     const v = t.map((i) => this.vertices[i])
     return [
@@ -189,14 +189,14 @@ export class Mesh {
   }
 
   /** @private */
-  #computeVolume (tIdx) {
+  _computeVolume (tIdx) {
     const tet = this.tetrahedra[tIdx]
     const v = tet.map((i) => this.vertices[i])
     return tetVolume(v[0], v[1], v[2], v[3])
   }
 
   /** @private */
-  #computeFaceOutwardNormal (fIdx) {
+  _computeFaceOutwardNormal (fIdx) {
     const f = this.faces[fIdx]
     const v0 = this.vertices[f[0]]
     const v1 = this.vertices[f[1]]
@@ -241,7 +241,7 @@ export class Mesh {
    * @return {number}
    */
   getFaceArea (fIdx) {
-    return this.#faceAreaCache[fIdx]
+    return this._faceAreaCache[fIdx]
   }
 
   /**
@@ -250,7 +250,7 @@ export class Mesh {
    * @return {number|undefined}
    */
   getEdgeIndex (edgeKey) {
-    return this.#edgeKeyToIndex.get(edgeKey)
+    return this._edgeKeyToIndex.get(edgeKey)
   }
 
   /**
@@ -259,7 +259,7 @@ export class Mesh {
    * @return {number|undefined}
    */
   getFaceIndex (faceKey) {
-    return this.#faceKeyToIndex.get(faceKey)
+    return this._faceKeyToIndex.get(faceKey)
   }
 
   /**
@@ -269,7 +269,7 @@ export class Mesh {
    * @return {number}
    */
   getTetEdgeSign (tIdx, e) {
-    return this.#tetEdgeSigns[tIdx][e]
+    return this._tetEdgeSigns[tIdx][e]
   }
 
   /**
@@ -343,7 +343,7 @@ export class Mesh {
    * @return {number}
    */
   getTetFaceSign (tIdx, f) {
-    return this.#tetFaceSigns[tIdx][f]
+    return this._tetFaceSigns[tIdx][f]
   }
 
   /**
@@ -362,7 +362,7 @@ export class Mesh {
   }
 
   /** @private */
-  #buildTopology () {
+  _buildTopology () {
     const faceMap = new Map()
     const edgeMap = new Map()
     const vc = this.originalVertexCount
@@ -377,7 +377,7 @@ export class Mesh {
       ]
 
       for (const f of localFaces) {
-        const key = this.#faceKey(f)
+        const key = this._faceKey(f)
         if (!faceMap.has(key)) {
           faceMap.set(key, { verts: f, tets: [tIdx] })
         } else {
@@ -390,7 +390,7 @@ export class Mesh {
     for (const [key, data] of faceMap.entries()) {
       this.faces.push(data.verts)
       this.faceToTets.push(data.tets)
-      this.#faceKeyToIndex.set(key, fIdx)
+      this._faceKeyToIndex.set(key, fIdx)
 
       const isBoundary = data.tets.length === 1
       if (isBoundary) {
@@ -423,7 +423,7 @@ export class Mesh {
     for (const [key, data] of edgeMap.entries()) {
       this.edges.push(data.verts)
       this.edgeToFaces.push(data.faces)
-      this.#edgeKeyToIndex.set(key, eIdx)
+      this._edgeKeyToIndex.set(key, eIdx)
       if (data.isBoundary) {
         this.boundaryEdges.push(eIdx)
       }
@@ -457,18 +457,18 @@ export class Mesh {
    * Computes orientation signs for edges and faces within each tetrahedron.
    * @private
    */
-  #computeOrientationSigns () {
-    this.#tetEdgeSigns = new Array(this.tetrahedronCount)
-    this.#tetFaceSigns = new Array(this.tetrahedronCount)
+  _computeOrientationSigns () {
+    this._tetEdgeSigns = new Array(this.tetrahedronCount)
+    this._tetFaceSigns = new Array(this.tetrahedronCount)
 
     for (let tIdx = 0; tIdx < this.tetrahedronCount; tIdx++) {
       const tet = this.tetrahedra[tIdx]
 
       const edges = [[0, 1], [0, 2], [0, 3], [1, 2], [1, 3], [2, 3]]
-      this.#tetEdgeSigns[tIdx] = edges.map(([i, j]) => {
+      this._tetEdgeSigns[tIdx] = edges.map(([i, j]) => {
         const gEdge = [tet[i], tet[j]]
         const key = Mesh.computeEdgeKey(gEdge[0], gEdge[1], this.originalVertexCount)
-        const gIdx = this.#edgeKeyToIndex.get(key)
+        const gIdx = this._edgeKeyToIndex.get(key)
         const stored = this.edges[gIdx]
         return stored[0] === gEdge[0] && stored[1] === gEdge[1] ? 1 : -1
       })
@@ -479,11 +479,11 @@ export class Mesh {
         [tet[0], tet[1], tet[3]],
         [tet[0], tet[1], tet[2]]
       ]
-      this.#tetFaceSigns[tIdx] = faces.map((f) => {
-        const key = this.#faceKey(f)
-        const gIdx = this.#faceKeyToIndex.get(key)
+      this._tetFaceSigns[tIdx] = faces.map((f) => {
+        const key = this._faceKey(f)
+        const gIdx = this._faceKeyToIndex.get(key)
         const stored = this.faces[gIdx]
-        return this.#facePermutationSign(stored, f)
+        return this._facePermutationSign(stored, f)
       })
     }
   }
@@ -495,7 +495,7 @@ export class Mesh {
    * @return {number}
    * @private
    */
-  #facePermutationSign (stored, local) {
+  _facePermutationSign (stored, local) {
     const idx = local.map((v) => stored.indexOf(v))
     // Count inversions in the permutation (idx[0], idx[1], idx[2]) of (0,1,2).
     // Even parity → +1, odd parity → -1.
@@ -514,7 +514,7 @@ export class Mesh {
    * @return {!Array<number>} [x, y, z]
    */
   getFaceBarycenter (fIdx) {
-    return this.#faceBarycenterCache[fIdx]
+    return this._faceBarycenterCache[fIdx]
   }
 
   /**
@@ -523,7 +523,7 @@ export class Mesh {
    * @return {!Array<number>} [x, y, z]
    */
   getTetrahedronBarycenter (tIdx) {
-    return this.#tetBarycenterCache[tIdx]
+    return this._tetBarycenterCache[tIdx]
   }
 
   /**
@@ -559,7 +559,7 @@ export class Mesh {
    * @return {number} Volume (absolute value of signed determinant / 6).
    */
   getVolume (tIdx) {
-    return this.#volumeCache[tIdx]
+    return this._volumeCache[tIdx]
   }
 
   /**
@@ -577,8 +577,8 @@ export class Mesh {
       [tet[0], tet[1], tet[2]]
     ]
     return local.map((lf) => {
-      const key = this.#faceKey(lf)
-      return this.#faceKeyToIndex.get(key)
+      const key = this._faceKey(lf)
+      return this._faceKeyToIndex.get(key)
     })
   }
 
@@ -592,7 +592,7 @@ export class Mesh {
    * @return {number}
    * @private
    */
-  #faceKey (f) {
+  _faceKey (f) {
     const [s0, s1, s2] = sort3(f[0], f[1], f[2])
     const vc = this.originalVertexCount
     return ((s0 * vc) + s1) * vc + s2
@@ -605,6 +605,6 @@ export class Mesh {
    * @return {!Array<number>}
    */
   getFaceOutwardNormal (fIdx) {
-    return this.#faceNormalCache[fIdx]
+    return this._faceNormalCache[fIdx]
   }
 }

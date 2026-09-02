@@ -27,7 +27,7 @@ export class LocalSolver {
 
     triangles.forEach((tri) => {
       const v = tri.map((i) => vertices[i])
-      const ke = LocalSolver.#triangleStiffness(v)
+      const ke = LocalSolver._triangleStiffness(v)
 
       for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
@@ -45,7 +45,7 @@ export class LocalSolver {
    * @return {!Array<!Array<number>>}
    * @private
    */
-  static #triangleStiffness (v) {
+  static _triangleStiffness (v) {
     const v1 = subtract(v[1], v[0])
     const v2 = subtract(v[2], v[0])
 

@@ -41,14 +41,14 @@ export class BoundaryWeightComputer {
    * @property {!Map<number, {normal: !Array<number>, area: number}>} faceBoundaryData
    */
   compute () {
-    const vertexBoundaryData = this.#computeVertexWeights()
-    const edgeBoundaryData = this.#computeEdgeData()
-    const faceBoundaryData = this.#computeFaceData()
+    const vertexBoundaryData = this._computeVertexWeights()
+    const edgeBoundaryData = this._computeEdgeData()
+    const faceBoundaryData = this._computeFaceData()
     return { vertexBoundaryData, edgeBoundaryData, faceBoundaryData }
   }
 
   /** @private */
-  #computeVertexWeights () {
+  _computeVertexWeights () {
     const zeta0Vertex = new Map()
     for (const vIdx of this.mesh.boundaryNodes) {
       try {
@@ -111,7 +111,7 @@ export class BoundaryWeightComputer {
   }
 
   /** @private */
-  #computeEdgeData () {
+  _computeEdgeData () {
     const zeta1Edge = new Map()
     for (const eIdx of this.mesh.boundaryEdges) {
       const e = this.mesh.edges[eIdx]
@@ -131,7 +131,7 @@ export class BoundaryWeightComputer {
   }
 
   /** @private */
-  #computeFaceData () {
+  _computeFaceData () {
     const zeta2Face = new Map()
     for (const fIdx of this.mesh.boundaryFaces) {
       const normal = this.mesh.getFaceOutwardNormal(fIdx)

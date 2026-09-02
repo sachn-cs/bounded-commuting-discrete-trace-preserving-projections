@@ -45,7 +45,7 @@ export class HdivProjector {
     for (let f = 0; f < 4; f++) {
       const fIdx = tFaces[f]
       const coefficient = this.computeFaceDof(u, fIdx)
-      const sign = this.#faceBasisSign(tIdx, f, fIdx)
+      const sign = this._faceBasisSign(tIdx, f, fIdx)
       result[0] += sign * coefficient * faceBasis[f][0]
       result[1] += sign * coefficient * faceBasis[f][1]
       result[2] += sign * coefficient * faceBasis[f][2]
@@ -97,7 +97,7 @@ export class HdivProjector {
    * @return {number} +1 or -1 (never 0).
    * @private
    */
-  #faceBasisSign (tIdx, f, fIdx) {
+  _faceBasisSign (tIdx, f, fIdx) {
     const fb = [1 / 3, 1 / 3, 1 / 3, 1 / 3]
     fb[f] = 0
     const phi = this.whitney.getFaceBasis(tIdx, fb)[f]
@@ -125,7 +125,7 @@ export class HdivProjector {
         continue
       }
       const coefficient = this.computeFaceDof(u, fIdx)
-      const sign = this.#faceBasisSign(tIdx, f, fIdx)
+      const sign = this._faceBasisSign(tIdx, f, fIdx)
       result[0] += sign * coefficient * faceBasis[f][0]
       result[1] += sign * coefficient * faceBasis[f][1]
       result[2] += sign * coefficient * faceBasis[f][2]

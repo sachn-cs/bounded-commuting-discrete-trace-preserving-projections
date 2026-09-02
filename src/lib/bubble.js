@@ -57,7 +57,7 @@ export class HigherOrderProjection {
    * @return {!Array<!Array<number>>} List of exponent tuples [a,b,c,d]
    *   such that basis function = lambda0^a * lambda1^b * lambda2^c * lambda3^d * b.
    */
-  #getBubbleExponents (p) {
+  _getBubbleExponents (p) {
     if (this.bubbleExponentCache.has(p)) {
       return this.bubbleExponentCache.get(p)
     }
@@ -85,7 +85,7 @@ export class HigherOrderProjection {
    * @return {number}
    * @private
    */
-  static #pow (base, exp) {
+  static _pow (base, exp) {
     if (base === 0 && exp === 0) return 1
     return Math.pow(base, exp)
   }
@@ -97,15 +97,15 @@ export class HigherOrderProjection {
    * @return {!Array<number>}
    */
   evaluateBubbleBasis (bary, p) {
-    const exponents = this.#getBubbleExponents(p)
+    const exponents = this._getBubbleExponents(p)
     if (exponents.length === 0) {
       return []
     }
     return exponents.map(([a, b, c, d]) =>
-      HigherOrderProjection.#pow(bary[0], a) *
-      HigherOrderProjection.#pow(bary[1], b) *
-      HigherOrderProjection.#pow(bary[2], c) *
-      HigherOrderProjection.#pow(bary[3], d)
+      HigherOrderProjection._pow(bary[0], a) *
+      HigherOrderProjection._pow(bary[1], b) *
+      HigherOrderProjection._pow(bary[2], c) *
+      HigherOrderProjection._pow(bary[3], d)
     )
   }
 
@@ -116,7 +116,7 @@ export class HigherOrderProjection {
    * @return {!Array<!Array<number>>}
    */
   assembleBubbleMass (tIdx, p) {
-    const exponents = this.#getBubbleExponents(p)
+    const exponents = this._getBubbleExponents(p)
     if (exponents.length === 0) {
       return []
     }
@@ -149,7 +149,7 @@ export class HigherOrderProjection {
    * @return {!Array<number>}
    */
   assembleBubbleRhs (tIdx, p, residualFn) {
-    const exponents = this.#getBubbleExponents(p)
+    const exponents = this._getBubbleExponents(p)
     if (exponents.length === 0) {
       return []
     }
@@ -224,7 +224,7 @@ export class HigherOrderProjection {
    * @return {!Array<!Array<number>>}
    * @private
    */
-  #getBernsteinExponents (p) {
+  _getBernsteinExponents (p) {
     const exponents = []
     for (let i = 0; i <= p; i++) {
       for (let j = 0; j <= p - i; j++) {
@@ -244,7 +244,7 @@ export class HigherOrderProjection {
    * @return {number}
    * @private
    */
-  static #multinomial (p, exps) {
+  static _multinomial (p, exps) {
     let result = 1
     let remaining = p
     for (const e of exps) {
@@ -264,15 +264,15 @@ export class HigherOrderProjection {
    * @return {!Array<number>}
    */
   evaluateBernsteinBasis (bary, p) {
-    const exponents = this.#getBernsteinExponents(p)
+    const exponents = this._getBernsteinExponents(p)
     return exponents.map(([i, j, k, l]) => {
-      const coeff = HigherOrderProjection.#multinomial(p, [i, j, k, l])
+      const coeff = HigherOrderProjection._multinomial(p, [i, j, k, l])
       return (
         coeff *
-        HigherOrderProjection.#pow(bary[0], i) *
-        HigherOrderProjection.#pow(bary[1], j) *
-        HigherOrderProjection.#pow(bary[2], k) *
-        HigherOrderProjection.#pow(bary[3], l)
+        HigherOrderProjection._pow(bary[0], i) *
+        HigherOrderProjection._pow(bary[1], j) *
+        HigherOrderProjection._pow(bary[2], k) *
+        HigherOrderProjection._pow(bary[3], l)
       )
     })
   }
@@ -287,7 +287,7 @@ export class HigherOrderProjection {
    * @return {!Array<!Array<number>>}
    * @private
    */
-  #assembleBernsteinMass (p, vol, exponents) {
+  _assembleBernsteinMass (p, vol, exponents) {
     const n = exponents.length
     const pFact = factorial(p)
     const denom = factorial(2 * p + 3)
@@ -336,7 +336,7 @@ export class HigherOrderProjection {
    * @return {!Array<number>} Coefficients of the Bernstein basis.
    */
   solveL2Projection (tIdx, p, u) {
-    const exponents = this.#getBernsteinExponents(p)
+    const exponents = this._getBernsteinExponents(p)
     const n = exponents.length
     if (n === 0) {
       return []
@@ -365,7 +365,7 @@ export class HigherOrderProjection {
       f[i] *= vol
     }
 
-    const M = this.#assembleBernsteinMass(p, vol, exponents)
+    const M = this._assembleBernsteinMass(p, vol, exponents)
     try {
       return luSolve(M, f)
     } catch (e) {
@@ -375,7 +375,7 @@ export class HigherOrderProjection {
         message:
           `HigherOrderProjection: L2 solve failed for tet ${tIdx}, p=${p}: ${e.message}`
       })
-      const mean = this.#cellMean(tIdx, u)
+      const mean = this._cellMean(tIdx, u)
       return new Array(n).fill(mean)
     }
   }
@@ -388,7 +388,7 @@ export class HigherOrderProjection {
    * @return {number}
    * @private
    */
-  #cellMean (tIdx, u) {
+  _cellMean (tIdx, u) {
     const { bary, weights } = compositeTetrahedronQuadrature(this.quadratureOrder)
     const verts = this.mesh.tetrahedra[tIdx].map((i) => this.mesh.vertices[i])
     let mean = 0

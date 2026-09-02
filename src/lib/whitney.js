@@ -16,23 +16,23 @@ import { ProjectionError } from './errors.js'
  */
 export class Whitney {
   /** @type {!Array<!Array<!Array<number>>|undefined>} */
-  #gradLCache
+  _gradLCache
   /** @type {!Array<number>} */
-  #tetDetCache
+  _tetDetCache
   /** @type {!Array<!Array<!Array<number>>>} */
-  #tetMatrixCache
+  _tetMatrixCache
   /** @type {!Array<!Array<!Array<number>>>} */
-  #tetTinvCache
+  _tetTinvCache
 
   /**
    * @param {!Mesh} mesh
    */
   constructor (mesh) {
     this.mesh = mesh
-    this.#gradLCache = new Array(mesh.tetrahedronCount)
-    this.#tetDetCache = new Array(mesh.tetrahedronCount)
-    this.#tetMatrixCache = new Array(mesh.tetrahedronCount)
-    this.#tetTinvCache = new Array(mesh.tetrahedronCount)
+    this._gradLCache = new Array(mesh.tetrahedronCount)
+    this._tetDetCache = new Array(mesh.tetrahedronCount)
+    this._tetMatrixCache = new Array(mesh.tetrahedronCount)
+    this._tetTinvCache = new Array(mesh.tetrahedronCount)
 
     for (let tIdx = 0; tIdx < mesh.tetrahedronCount; tIdx++) {
       const tet = mesh.tetrahedra[tIdx]
@@ -45,8 +45,8 @@ export class Whitney {
 
       const det = tetDeterminant(v[3], v[0], v[1], v[2])
 
-      this.#tetDetCache[tIdx] = det
-      this.#tetMatrixCache[tIdx] = T
+      this._tetDetCache[tIdx] = det
+      this._tetMatrixCache[tIdx] = T
 
       if (Math.abs(det) >= 1e-12) {
         const Tinv = inverse3x3(T)
@@ -58,8 +58,8 @@ export class Whitney {
           -g0[1] - g1[1] - g2[1],
           -g0[2] - g1[2] - g2[2]
         ]
-        this.#gradLCache[tIdx] = [g0, g1, g2, g3]
-        this.#tetTinvCache[tIdx] = Tinv
+        this._gradLCache[tIdx] = [g0, g1, g2, g3]
+        this._tetTinvCache[tIdx] = Tinv
       }
     }
   }
@@ -78,20 +78,20 @@ export class Whitney {
       )
     }
     const v = this.mesh.tetrahedra[tIdx].map((i) => this.mesh.vertices[i])
-    const T = this.#tetMatrixCache[tIdx] ?? [
+    const T = this._tetMatrixCache[tIdx] ?? [
       [v[0][0] - v[3][0], v[1][0] - v[3][0], v[2][0] - v[3][0]],
       [v[0][1] - v[3][1], v[1][1] - v[3][1], v[2][1] - v[3][1]],
       [v[0][2] - v[3][2], v[1][2] - v[3][2], v[2][2] - v[3][2]]
     ]
 
-    const det = this.#tetDetCache[tIdx] ?? tetDeterminant(v[3], v[0], v[1], v[2])
+    const det = this._tetDetCache[tIdx] ?? tetDeterminant(v[3], v[0], v[1], v[2])
 
     if (Math.abs(det) < 1e-12) {
       throw new ProjectionError('Degenerate tetrahedron')
     }
 
     const b = [point[0] - v[3][0], point[1] - v[3][1], point[2] - v[3][2]]
-    const Tinv = this.#tetTinvCache[tIdx] ?? inverse3x3(T)
+    const Tinv = this._tetTinvCache[tIdx] ?? inverse3x3(T)
     const L = [
       Tinv[0][0] * b[0] + Tinv[0][1] * b[1] + Tinv[0][2] * b[2],
       Tinv[1][0] * b[0] + Tinv[1][1] * b[1] + Tinv[1][2] * b[2],
@@ -106,7 +106,7 @@ export class Whitney {
    * @return {!Array<!Array<number>>}
    */
   getGradBarycentric (tIdx) {
-    const gradL = this.#gradLCache[tIdx]
+    const gradL = this._gradLCache[tIdx]
     if (!gradL) {
       throw new ProjectionError(`Degenerate tetrahedron ${tIdx}`)
     }
