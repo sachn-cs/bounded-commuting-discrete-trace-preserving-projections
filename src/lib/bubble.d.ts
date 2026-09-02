@@ -7,7 +7,7 @@ import type {Whitney} from './whitney.js';
  * For p >= 1, the projection Pi^l_p is built recursively from the lowest-order
  * projection Pi^l_0 by adding bubble corrections on Alfeld-split patches.
  */
-export class HigherOrderProjection {
+export class Bubble {
   /**
    * @param mesh - The mesh.
    * @param whitney - Whitney form utilities.

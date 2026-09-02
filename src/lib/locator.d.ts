@@ -5,7 +5,7 @@ import type {Mesh} from './mesh.js';
  *
  * Recursively partitions the mesh bounding box to achieve O(log N) search.
  */
-export class PointLocator {
+export class Locator {
   /**
    * @param mesh - The mesh to index.
    * @param maxLeafSize - Maximum tets per leaf node (default 8).

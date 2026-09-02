@@ -1,13 +1,13 @@
 /**
  * Thrown when mesh input data fails validation.
  */
-export class MeshValidationError extends Error {
+export class ValidateError extends Error {
   /**
    * @param message - Error message.
    * @param index - The offending element index, if applicable.
    */
   constructor(message: string, index?: number);
-  name: 'MeshValidationError';
+  name: 'ValidateError';
   /** The offending element index, if applicable. */
   index?: number;
 }
@@ -15,15 +15,15 @@ export class MeshValidationError extends Error {
 /**
  * Thrown when a projection cannot be computed.
  */
-export class ProjectionError extends Error {
+export class ProjectError extends Error {
   constructor(message: string);
-  name: 'ProjectionError';
+  name: 'ProjectError';
 }
 
 /**
  * Thrown when a linear system is singular or numerically ill-conditioned.
  */
-export class SingularMatrixError extends Error {
+export class SingularError extends Error {
   constructor(message: string);
-  name: 'SingularMatrixError';
+  name: 'SingularError';
 }

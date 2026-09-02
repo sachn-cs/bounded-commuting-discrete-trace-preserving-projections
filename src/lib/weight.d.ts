@@ -1,13 +1,13 @@
 import type {Mesh} from './mesh.js';
-import type {MeshRefinement} from './mesh_refinement.js';
+import type {Refinement} from './refinement.js';
 
 /**
- * Boundary weight computation for TraceProjector projections.
+ * Boundary weight computation for Projector projections.
  *
  * Computes vertex patch weights, edge tangents/lengths, and face normals/areas
  * used by trace-preserving boundary DoFs.
  */
-export class BoundaryWeightComputer {
+export class Weight {
   /**
    * @param mesh - The mesh.
    * @param meshRefinement - Refinement data structure.
@@ -15,7 +15,7 @@ export class BoundaryWeightComputer {
    */
   constructor(
     mesh: Mesh,
-    meshRefinement: MeshRefinement,
+    meshRefinement: Refinement,
     onWarning?: (ctx: {code: string; severity: 'warn' | 'error'; message: string}) => void,
   );
 

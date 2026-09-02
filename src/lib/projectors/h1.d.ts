@@ -1,9 +1,9 @@
 import type {Mesh} from '../mesh.js';
 import type {Whitney} from '../whitney.js';
-import type {MeshRefinement} from '../mesh_refinement.js';
+import type {Refinement} from '../refinement.js';
 
-export class H1Projector {
-  constructor(mesh: Mesh, whitney: Whitney, meshRefinement: MeshRefinement);
+export class H1 {
+  constructor(mesh: Mesh, whitney: Whitney, meshRefinement: Refinement);
   project(
     u: (point: number[]) => number,
     point: number[],

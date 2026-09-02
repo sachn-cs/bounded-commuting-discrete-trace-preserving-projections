@@ -1,7 +1,7 @@
 import type {Mesh} from '../mesh.js';
 import type {Whitney} from '../whitney.js';
 
-export class HcurlProjector {
+export class Hcurl {
   constructor(mesh: Mesh, whitney: Whitney, quadratureOrder: number);
   project(
     u: (point: number[]) => number | number[],

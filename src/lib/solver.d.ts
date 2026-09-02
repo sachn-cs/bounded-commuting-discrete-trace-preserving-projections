@@ -2,7 +2,7 @@
  * Local patch stiffness assembly and constrained solves for boundary
  * weight computation.
  */
-export class LocalSolver {
+export class Solver {
   /**
    * Assembles the surface stiffness matrix for -Delta_Gamma.
    * @param vertices - Patch vertex coordinates.

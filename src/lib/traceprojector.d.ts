@@ -7,7 +7,7 @@ import type {Whitney} from './whitney.js';
  * Implements the de Rham projection operators Pi^l for l = 0,1,2,3 on
  * tetrahedral meshes with boundary-aware trace preservation.
  */
-export class TraceProjector {
+export class Projector {
   constructor(
     mesh: Mesh,
     whitney: Whitney,
@@ -21,7 +21,7 @@ export class TraceProjector {
    * Builds the AABB tree for point location.
    * Must be called before projectAtPoint if the tree was not built automatically.
    */
-  buildPointLocator(): void;
+  buildLocator(): void;
 
   /**
    * Section 6.3.1: Construction of lowest-order vertex weights.

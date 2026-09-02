@@ -8,7 +8,7 @@ import type {Mesh} from './mesh.js';
  * It stores the refinement data (sub-triangles, sub-tetrahedra) separately so
  * that Mesh remains a pure data structure.
  */
-export class MeshRefinement {
+export class Refinement {
   constructor(mesh: Mesh);
 
   /** Face barycenter vertex indices (mutated during split). */

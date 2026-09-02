@@ -46,13 +46,13 @@
       "types": "./src/lib/quadrature.d.ts",
       "default": "./src/lib/quadrature.js"
     },
-    "./math-utils": {
-      "types": "./src/lib/math_utils.d.ts",
-      "default": "./src/lib/math_utils.js"
+    "./utils": {
+      "types": "./src/lib/utils.d.ts",
+      "default": "./src/lib/utils.js"
     },
-    "./point-locator": {
-      "types": "./src/lib/point_locator.d.ts",
-      "default": "./src/lib/point_locator.js"
+    "./locator": {
+      "types": "./src/lib/locator.d.ts",
+      "default": "./src/lib/locator.js"
     }
   },
   "types": "src/lib/traceprojector.d.ts",
