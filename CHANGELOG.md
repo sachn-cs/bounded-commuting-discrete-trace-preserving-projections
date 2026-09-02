@@ -24,7 +24,7 @@ All notable changes to this project will be documented in this file.
 
 - Rename all source files to single-word names (`math_utils` → `utils`, `local_solver` → `solver`, `boundary_weight_computer` → `weight`, `higher_order_projection` → `bubble`, `mesh_refinement` → `refinement`, `mesh_generator` → `generator`, `point_locator` → `locator`, `convergence_harness` → `harness`, `projectors/*_projector` → `projectors/h1|hcurl|hdiv|l2`)
 - Rename all classes to single words (`TraceProjector` → `Projector`, `H1Projector` → `H1`, `HcurlProjector` → `Hcurl`, `HdivProjector` → `Hdiv`, `L2Projector` → `L2`, `BoundaryWeightComputer` → `Weight`, `LocalSolver` → `Solver`, `HigherOrderProjection` → `Bubble`, `MeshRefinement` → `Refinement`, `PointLocator` → `Locator`, `MeshValidationError` → `ValidateError`, `ProjectionError` → `ProjectError`, `SingularMatrixError` → `SingularError`)
-- Drop all `#private` markers in favor of plain leading-underscore internal members
+- Use plain public member names for every field and method; no `#private` markers and no leading-underscore semi-private prefixes
 - Rename package export subpaths (`./utils`, `./locator`) and the `PointLocator`/`buildPointLocator` API to `Locator`/`buildLocator`
 - Fix case-sensitivity bug in tests importing `traceProjector.js` (now `traceprojector.js`)
 
