@@ -21,6 +21,7 @@ All notable changes to this project will be documented in this file.
 - Fall back to the cell mean (never a silent zero) when a higher-order L2 mass matrix solve is singular
 - Evaluate the H1 boundary DoF exactly at the vertex `u(v)` (eq. 6.25) instead of approximating the weighted surface integral
 - Use the exact edge DoF `∫_e u·t ds` on every H(curl) edge, interior included, instead of midpoint tangential sampling
+- Add Section 2.3 surface differential operators (`grad_Γ`, `curl_Γ`, `div_Γ`, `rot_Γ`) and the Section 6.3 barycenter tent `μ` on Alfeld-split faces
 
 ### Changed (naming conventions)
 
