@@ -112,7 +112,7 @@ export class TraceProjector {
     }
     if (degenerateCount > 0) {
       this.#onWarning({
-        code: 'BCDTPP_DEGENERATE_MESH',
+        code: 'TRACEPROJECTOR_DEGENERATE_MESH',
         severity: 'warn',
         message:
           `TraceProjector: mesh contains ${degenerateCount} degenerate or ` +
