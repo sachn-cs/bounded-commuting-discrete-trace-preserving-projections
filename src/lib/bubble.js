@@ -5,7 +5,7 @@
  * projection Pi^l_0 by adding bubble corrections on Alfeld-split patches.
  */
 
-import { zeros, luSolve, factorial } from './math_utils.js'
+import { zeros, luSolve, factorial } from './utils.js'
 import {
   barycentricToCartesian,
   tetrahedronQuadrature,

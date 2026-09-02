@@ -5,7 +5,7 @@
 import { Mesh } from './mesh.js'
 import { ValidateError } from './errors.js'
 
-import { tetDeterminant } from './math_utils.js'
+import { tetDeterminant } from './utils.js'
 
 /**
  * Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the

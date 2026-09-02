@@ -5,7 +5,7 @@
  */
 
 import { triangleQuadrature, barycentricToCartesian } from '../quadrature.js'
-import { triangleArea } from '../math_utils.js'
+import { triangleArea } from '../utils.js'
 
 /**
  * Lowest-order H1 (l=0) vertex-based projector implementing Pi^0.

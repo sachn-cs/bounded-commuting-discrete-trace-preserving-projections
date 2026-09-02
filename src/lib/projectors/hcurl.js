@@ -4,7 +4,7 @@
  * Edge-based vector projection with boundary-aware tangential trace DoFs.
  */
 
-import { dot, subtract, numericalGradient } from '../math_utils.js'
+import { dot, subtract, numericalGradient } from '../utils.js'
 import { lineQuadrature } from '../quadrature.js'
 
 /**

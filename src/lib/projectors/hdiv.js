@@ -4,7 +4,7 @@
  * Face-based vector projection with boundary-aware normal trace DoFs.
  */
 
-import { dot, numericalGradient, triangleArea } from '../math_utils.js'
+import { dot, numericalGradient, triangleArea } from '../utils.js'
 import { triangleQuadrature, barycentricToCartesian } from '../quadrature.js'
 
 /**

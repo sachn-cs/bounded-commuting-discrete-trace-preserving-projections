@@ -4,11 +4,11 @@
  */
 import { expect } from 'chai'
 import { Whitney } from '../src/lib/whitney.js'
-import { Projector } from '../src/lib/traceProjector.js'
+import { Projector } from '../src/lib/traceprojector.js'
 import {
   generateUnitCubeMesh,
   generateSingleTetMesh
-} from '../src/lib/mesh_generator.js'
+} from '../src/lib/generator.js'
 import {
   computeL2ErrorScalar,
   computeL2ErrorVector,
@@ -16,7 +16,7 @@ import {
   estimateMeshSize,
   computeRate,
   runConvergenceStudy
-} from '../src/lib/convergence_harness.js'
+} from '../src/lib/harness.js'
 
 // Verifies the mesh generator produces valid tetrahedral meshes
 // with correct counts for various subdivision levels.

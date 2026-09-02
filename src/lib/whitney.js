@@ -2,7 +2,7 @@
  * Whitney forms and barycentric coordinate utilities on a tetrahedral mesh.
  */
 
-import { cross, inverse3x3, tetDeterminant } from './math_utils.js'
+import { cross, inverse3x3, tetDeterminant } from './utils.js'
 import { ProjectError } from './errors.js'
 
 /**

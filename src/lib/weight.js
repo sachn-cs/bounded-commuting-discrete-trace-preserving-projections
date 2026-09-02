@@ -5,8 +5,8 @@
  * used by trace-preserving boundary DoFs.
  */
 
-import { subtract, norm, triangleArea } from './math_utils.js'
-import { Solver } from './local_solver.js'
+import { subtract, norm, triangleArea } from './utils.js'
+import { Solver } from './solver.js'
 
 /**
  * Computes boundary patch weights used by the trace-preserving projection

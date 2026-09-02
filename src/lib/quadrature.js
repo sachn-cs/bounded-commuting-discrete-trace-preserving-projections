@@ -6,7 +6,7 @@
  *   integral ≈ area * Σ w_i * f(x_i)
  */
 
-import { tetVolume } from './math_utils.js'
+import { tetVolume } from './utils.js'
 
 /**
  * Returns quadrature points and weights on the reference triangle.

@@ -5,7 +5,7 @@
  */
 import { expect } from 'chai'
 import { Mesh } from '../src/lib/mesh.js'
-import { Refinement } from '../src/lib/mesh_refinement.js'
+import { Refinement } from '../src/lib/refinement.js'
 
 // Verifies Mesh topology construction: faces, edges, boundary sets,
 // volume, orientation signs, vertex stars, and multi-tet connectivity.

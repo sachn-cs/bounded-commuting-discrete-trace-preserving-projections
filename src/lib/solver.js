@@ -3,7 +3,7 @@
  * weight computation.
  */
 
-import { dot, cross, subtract, norm, zeros, luSolve, infinityNorm } from './math_utils.js'
+import { dot, cross, subtract, norm, zeros, luSolve, infinityNorm } from './utils.js'
 import { SingularError } from './errors.js'
 
 /**

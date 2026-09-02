@@ -5,7 +5,7 @@
  */
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { Solver } from '../src/lib/local_solver.js'
+import { Solver } from '../src/lib/solver.js'
 import { SingularError } from '../src/lib/errors.js'
 
 // Tests for Solver: surface stiffness symmetry, ill-conditioning

@@ -22,7 +22,7 @@ import {
   tetVolume,
   factorial,
   numericalGradient
-} from '../src/lib/math_utils.js'
+} from '../src/lib/utils.js'
 import { SingularError } from '../src/lib/errors.js'
 
 describe('Math Utils', () => {

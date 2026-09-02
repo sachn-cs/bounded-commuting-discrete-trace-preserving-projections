@@ -7,16 +7,16 @@
 
 import {
   numericalGradient
-} from './math_utils.js'
+} from './utils.js'
 import { ProjectError } from './errors.js'
-import { Weight } from './boundary_weight_computer.js'
-import { Locator } from './point_locator.js'
-import { Bubble } from './higher_order_projection.js'
-import { Refinement } from './mesh_refinement.js'
-import { H1 } from './projectors/h1_projector.js'
-import { Hcurl } from './projectors/hcurl_projector.js'
-import { Hdiv } from './projectors/hdiv_projector.js'
-import { L2 } from './projectors/l2_projector.js'
+import { Weight } from './weight.js'
+import { Locator } from './locator.js'
+import { Bubble } from './bubble.js'
+import { Refinement } from './refinement.js'
+import { H1 } from './projectors/h1.js'
+import { Hcurl } from './projectors/hcurl.js'
+import { Hdiv } from './projectors/hdiv.js'
+import { L2 } from './projectors/l2.js'
 
 /**
  * TRACEPROJECTOR: Bounded, Commuting, Discrete-trace Preserving Projections.

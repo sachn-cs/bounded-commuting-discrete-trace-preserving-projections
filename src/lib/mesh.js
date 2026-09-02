@@ -8,7 +8,7 @@
  * Worsey-Farin split) live in a separate {@link Refinement} class.
  */
 
-import { triangleArea, tetDeterminant, tetVolume } from './math_utils.js'
+import { triangleArea, tetDeterminant, tetVolume } from './utils.js'
 import { ValidateError } from './errors.js'
 
 /**

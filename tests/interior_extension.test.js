@@ -7,8 +7,8 @@
 import { expect } from 'chai'
 import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
-import { Projector } from '../src/lib/traceProjector.js'
-import { generateUnitCubeMesh } from '../src/lib/mesh_generator.js'
+import { Projector } from '../src/lib/traceprojector.js'
+import { generateUnitCubeMesh } from '../src/lib/generator.js'
 
 const singleTet = {
   vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
