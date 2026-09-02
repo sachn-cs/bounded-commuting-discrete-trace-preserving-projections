@@ -126,16 +126,16 @@ the body diagonal from (0,0,0) to (1,1,1).</p>
 </dd>
 <dt><a href="#computeL2ErrorScalar">computeL2ErrorScalar(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
 <dd><p>Computes the L2 error between an exact function and its projection.</p>
-<p>err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx</p>
+<p>err_L2^2 = ΣT ∫_T |u_exact - u_proj|^2 dx</p>
 </dd>
 <dt><a href="#computeL2ErrorVector">computeL2ErrorVector(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
 <dd><p>Computes the L2 error for a vector-valued projection.</p>
-<p>err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx</p>
+<p>err_L2^2 = ΣT ∫_T |v_exact - v_proj|^2 dx</p>
 </dd>
 <dt><a href="#computeH1SemiError">computeH1SemiError(mesh, traceProjector, exactFn, projFn)</a> ⇒ <code>number</code></dt>
 <dd><p>Computes the H1 semi-norm error (L2 error of the gradient) for scalar projections.
 Uses numerical differentiation of the exact function for comparison.</p>
-<p>err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx</p>
+<p>err_H1^2 = ΣT ∫_T |grad(u_exact) - grad(u_proj)|^2 dx</p>
 </dd>
 <dt><a href="#estimateMeshSize">estimateMeshSize(mesh)</a> ⇒ <code>number</code></dt>
 <dd><p>Estimates the mesh size h as the cube root of the average tetrahedron volume
@@ -320,7 +320,7 @@ Generates a single reference tetrahedron mesh.
 ## computeL2ErrorScalar(mesh, traceProjector, exactFn, projFn) ⇒ <code>number</code>
 Computes the L2 error between an exact function and its projection.
 
-err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
+err_L2^2 = ΣT ∫_T |u_exact - u_proj|^2 dx
 
 **Kind**: global function  
 
@@ -336,7 +336,7 @@ err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
 ## computeL2ErrorVector(mesh, traceProjector, exactFn, projFn) ⇒ <code>number</code>
 Computes the L2 error for a vector-valued projection.
 
-err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
+err_L2^2 = ΣT ∫_T |v_exact - v_proj|^2 dx
 
 **Kind**: global function  
 
@@ -353,7 +353,7 @@ err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
 Computes the H1 semi-norm error (L2 error of the gradient) for scalar projections.
 Uses numerical differentiation of the exact function for comparison.
 
-err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
+err_H1^2 = ΣT ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
 
 **Kind**: global function  
 

@@ -19,6 +19,8 @@ All notable changes to this project will be documented in this file.
 - Enforce the mean-zero constraint in `LocalSolver` with an exact Lagrange-multiplier (bordered) solve instead of row replacement, so every stiffness row is honored
 - Use a single mesh-orientation normal flux for all H(div) faces with Whitney-basis sign alignment, giving a continuous normal trace across interior faces
 - Fall back to the cell mean (never a silent zero) when a higher-order L2 mass matrix solve is singular
+- Evaluate the H1 boundary DoF exactly at the vertex `u(v)` (eq. 6.25) instead of approximating the weighted surface integral
+- Use the exact edge DoF `∫_e u·t ds` on every H(curl) edge, interior included, instead of midpoint tangential sampling
 
 ### Changed (naming conventions)
 
