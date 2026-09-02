@@ -10,9 +10,9 @@ import { SingularMatrixError } from './errors.js'
  * Static utility for assembling surface-patch stiffness matrices and solving
  * constrained linear systems during boundary weight computation.
  *
- * The constraint enforcement uses a simple row-replacement approach that works
- * well for small patch sizes (valence < 20).  For production-scale patches a
- * Lagrange-multiplier or projected-gradient method is preferable.
+ * Constraints are enforced exactly with a Lagrange-multiplier (bordered)
+ * system, so every stiffness row is preserved and the recovered solution
+ * satisfies the original equations up to the constraint multiplier.
  */
 export class LocalSolver {
   /**
@@ -70,12 +70,15 @@ export class LocalSolver {
   /**
    * Solves K x = b with a mean-zero constraint sum(x) = 0.
    *
-   * This implementation enforces the constraint by replacing the last row of K
-   * with ones and setting the last entry of b to zero. This is a simple
-   * textbook approach that works well for small patch sizes (valence < 20).
-   * It destroys symmetry and can degrade conditioning for larger systems; for
-   * production-scale patches a Lagrange-multiplier or projected-gradient method
-   * is preferable.
+   * The constraint is enforced exactly with a Lagrange multiplier lambda by
+   * solving the symmetric bordered system
+   *
+   *   [ K  1 ] [ x ]   [ b ]
+   *   [ 1^T 0 ] [lambda] = [ 0 ]
+   *
+   * and discarding the multiplier.  Unlike row replacement this keeps every
+   * stiffness row intact and preserves symmetry, so x satisfies K x = b up to
+   * a constant (lambda * 1) and is the true constrained solution.
    *
    * @param {!Array<!Array<number>>} K
    * @param {!Array<number>} b
@@ -88,14 +91,13 @@ export class LocalSolver {
     if (n === 0) {
       return []
     }
-    const KDense = K.map((row) => [...row])
-    for (let j = 0; j < n; j++) {
-      KDense[n - 1][j] = 1.0
-    }
-    const bMod = [...b]
-    bMod[n - 1] = 0
+    const A = K.map((row) => [...row, 1.0])
+    const last = new Array(n + 1).fill(1.0)
+    last[n] = 0.0
+    A.push(last)
+    const rhs = [...b, 0.0]
 
-    const normEst = infinityNorm(KDense)
+    const normEst = infinityNorm(A)
     if (normEst > 1e12) {
       onWarning({
         code: 'LOCAL_SOLVER_ILL_CONDITIONED',
@@ -107,7 +109,7 @@ export class LocalSolver {
     }
 
     try {
-      return luSolve(KDense, bMod)
+      return luSolve(A, rhs).slice(0, n)
     } catch (e) {
       throw new SingularMatrixError(
         `LocalSolver: constrained solve failed (${e.message}). ` +
