@@ -31,9 +31,9 @@ so projectHp returns the lowest-order projection without enrichment.</p>
 <dt><a href="#LocalSolver">LocalSolver</a></dt>
 <dd><p>Static utility for assembling surface-patch stiffness matrices and solving
 constrained linear systems during boundary weight computation.</p>
-<p>The constraint enforcement uses a simple row-replacement approach that works
-well for small patch sizes (valence &lt; 20).  For production-scale patches a
-Lagrange-multiplier or projected-gradient method is preferable.</p>
+<p>Constraints are enforced exactly with a Lagrange-multiplier (bordered)
+system, so every stiffness row is preserved and the recovered solution
+satisfies the original equations up to the constraint multiplier.</p>
 </dd>
 <dt><a href="#MeshRefinement">MeshRefinement</a></dt>
 <dd><p>Mesh refinement operators implementing Alfeld face splitting (Section 6.1.3)
@@ -90,8 +90,10 @@ component.</p>
 <dt><a href="#HdivProjector">HdivProjector</a></dt>
 <dd><p>Lowest-order H(div) (l=2) face-based projector implementing Pi^2.</p>
 <p>Projects vector functions onto the Raviart-Thomas (Whitney 2-form) space.
-Boundary faces use exact normal-flux degrees of freedom (∫_f u·n dA);
-interior faces use barycenter evaluation of the normal component.</p>
+Every face uses the same exact normal-flux degree of freedom
+(∫_f u·n dA) with the mesh-orientation normal, so interior faces share a
+consistent coefficient with both adjacent tetrahedra and the discrete
+normal trace is continuous across the mesh.</p>
 </dd>
 <dt><a href="#L2Projector">L2Projector</a></dt>
 <dd><p>Lowest-order L2 (l=3) cell-based projector implementing Pi^3.</p>
@@ -239,9 +241,9 @@ for polynomial spaces up to degree 3 remains full-rank.</p>
 Static utility for assembling surface-patch stiffness matrices and solving
 constrained linear systems during boundary weight computation.
 
-The constraint enforcement uses a simple row-replacement approach that works
-well for small patch sizes (valence < 20).  For production-scale patches a
-Lagrange-multiplier or projected-gradient method is preferable.
+Constraints are enforced exactly with a Lagrange-multiplier (bordered)
+system, so every stiffness row is preserved and the recovered solution
+satisfies the original equations up to the constraint multiplier.
 
 **Kind**: global class  
 
@@ -266,12 +268,15 @@ Assembles the surface stiffness matrix for -Delta_Gamma.
 ### LocalSolver.solveWithConstraint(K, b, [onWarning]) ⇒ <code>Array.&lt;number&gt;</code>
 Solves K x = b with a mean-zero constraint sum(x) = 0.
 
-This implementation enforces the constraint by replacing the last row of K
-with ones and setting the last entry of b to zero. This is a simple
-textbook approach that works well for small patch sizes (valence < 20).
-It destroys symmetry and can degrade conditioning for larger systems; for
-production-scale patches a Lagrange-multiplier or projected-gradient method
-is preferable.
+The constraint is enforced exactly with a Lagrange multiplier lambda by
+solving the symmetric bordered system
+
+  [ K  1 ] [ x ]   [ b ]
+  [ 1^T 0 ] [lambda] = [ 0 ]
+
+and discarding the multiplier.  Unlike row replacement this keeps every
+stiffness row intact and preserves symmetry, so x satisfies K x = b up to
+a constant (lambda * 1) and is the true constrained solution.
 
 **Kind**: static method of [<code>LocalSolver</code>](#LocalSolver)  
 

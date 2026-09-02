@@ -325,6 +325,11 @@ export class HigherOrderProjection {
   /**
    * Solves the L2 projection of u onto P^p(T) using the Bernstein basis.
    * The mass matrix is computed analytically; only the RHS uses quadrature.
+   *
+   * If the mass matrix is singular (e.g. a near-zero volume element), the
+   * cell mean of u is returned as constant Bernstein coefficients so that
+   * evaluation falls back to the L2 projection onto P0 instead of silently
+   * returning zero.
    * @param {number} tIdx
    * @param {number} p
    * @param {function(!Array<number>): number} u
@@ -370,8 +375,27 @@ export class HigherOrderProjection {
         message:
           `HigherOrderProjection: L2 solve failed for tet ${tIdx}, p=${p}: ${e.message}`
       })
-      return []
+      const mean = this.#cellMean(tIdx, u)
+      return new Array(n).fill(mean)
     }
+  }
+
+  /**
+   * Cell mean of u over tetrahedron tIdx using composite quadrature
+   * (weights sum to 1).
+   * @param {number} tIdx
+   * @param {function(!Array<number>): number} u
+   * @return {number}
+   * @private
+   */
+  #cellMean (tIdx, u) {
+    const { bary, weights } = compositeTetrahedronQuadrature(this.quadratureOrder)
+    const verts = this.mesh.tetrahedra[tIdx].map((i) => this.mesh.vertices[i])
+    let mean = 0
+    for (let q = 0; q < bary.length; q++) {
+      mean += weights[q] * u(barycentricToCartesian(verts, bary[q]))
+    }
+    return mean
   }
 
   /**

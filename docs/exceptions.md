@@ -61,6 +61,6 @@ Thrown by linear algebra routines in `math_utils.js` when a matrix is singular o
 | Code | Message | Meaning |
 |------|---------|---------|
 | `HOP_SINGULAR_MASS` | `Singular mass matrix for bubble projection ...` | The bubble mass matrix is singular; bubble coefficients are skipped. |
-| `HOP_SINGULAR_L2` | `Singular L2 mass matrix ...` | The L2 mass matrix is singular (often zero volume); coefficients are empty. |
+| `HOP_SINGULAR_L2` | `Singular L2 mass matrix ...` | The L2 mass matrix is singular (often zero volume); coefficients fall back to the cell mean (constant polynomial), never a silent zero. |
 
 **Recovery**: Ensure the tetrahedron has strictly positive volume.
