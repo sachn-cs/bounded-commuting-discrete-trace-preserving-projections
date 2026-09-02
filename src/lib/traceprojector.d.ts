@@ -2,12 +2,12 @@ import type {Mesh} from './mesh.js';
 import type {Whitney} from './whitney.js';
 
 /**
- * BCDTPP: Bounded, Commuting, Discrete-trace Preserving Projections.
+ * TRACEPROJECTOR: Bounded, Commuting, Discrete-trace Preserving Projections.
  *
  * Implements the de Rham projection operators Pi^l for l = 0,1,2,3 on
  * tetrahedral meshes with boundary-aware trace preservation.
  */
-export class Bcdtpp {
+export class TraceProjector {
   constructor(
     mesh: Mesh,
     whitney: Whitney,
