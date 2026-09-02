@@ -1,11 +1,11 @@
 <p align="center">
-  <h1 align="center">bcdtpp</h1>
+  <h1 align="center">traceprojector</h1>
   <p align="center">Bounded, Commuting, Discrete-trace Preserving Projections for the 3D de Rham complex on simplicial meshes.</p>
   <p align="center">
-    <a href="#installation"><img src="https://img.shields.io/npm/v/bcdtpp.svg" alt="npm version"></a>
+    <a href="#installation"><img src="https://img.shields.io/npm/v/traceprojector.svg" alt="npm version"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
     <a href="https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/actions"><img src="https://img.shields.io/github/actions/workflow/status/sachncs/bounded-commuting-discrete-trace-preserving-projections/ci.yml?branch=master" alt="CI"></a>
-    <a href="https://www.npmjs.com/package/bcdtpp"><img src="https://img.shields.io/npm/v/bcdtpp" alt="npm"></a>
+    <a href="https://www.npmjs.com/package/traceprojector"><img src="https://img.shields.io/npm/v/traceprojector" alt="npm"></a>
     <a href="https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/stargazers"><img src="https://img.shields.io/github/stars/sachncs/bounded-commuting-discrete-trace-preserving-projections" alt="Stars"></a>
   </p>
 </p>
@@ -39,7 +39,7 @@ Based on the paper: [*Ern, Guzmán, Potu (2026) arXiv:2604.28103v1*](https://arx
 ### From npm
 
 ```bash
-npm install bcdtpp
+npm install traceprojector
 ```
 
 ### From source
@@ -57,7 +57,7 @@ npm install
 ### 1. Define a Mesh
 
 ```javascript
-import { Mesh } from 'bcdtpp'
+import { Mesh } from 'traceprojector'
 
 const mesh = new Mesh(vertices, tetrahedra)
 ```
@@ -65,33 +65,33 @@ const mesh = new Mesh(vertices, tetrahedra)
 ### 2. Initialize Projections
 
 ```javascript
-import { Whitney, Bcdtpp } from 'bcdtpp'
+import { Whitney, TraceProjector } from 'traceprojector'
 
 const whitney = new Whitney(mesh)
-const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
+const traceprojector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
 
 // Compute boundary weights (Alfeld splits + local solves)
-bcdtpp.computeBoundaryWeights()
-bcdtpp.buildPointLocator()
+traceprojector.computeBoundaryWeights()
+traceprojector.buildPointLocator()
 ```
 
 ### 3. Project a Function
 
 ```javascript
 const u = (p) => Math.sin(p[0])
-const val = bcdtpp.projectH1(u, [0.5, 0.5, 0.5], 0)
+const val = traceprojector.projectH1(u, [0.5, 0.5, 0.5], 0)
 ```
 
 ### 4. Higher-Order Projection
 
 ```javascript
-const val = bcdtpp.projectHp(u, point, tetIdx, /* l */ 0, /* p */ 2)
+const val = traceprojector.projectHp(u, point, tetIdx, /* l */ 0, /* p */ 2)
 ```
 
 ### 5. Point Location
 
 ```javascript
-const result = bcdtpp.projectAtPoint(u, [0.1, 0.2, 0.3], /* l */ 0, /* p */ 0)
+const result = traceprojector.projectAtPoint(u, [0.1, 0.2, 0.3], /* l */ 0, /* p */ 0)
 // result = { value, tIdx, bary }
 ```
 
@@ -113,7 +113,7 @@ const result = bcdtpp.projectAtPoint(u, [0.1, 0.2, 0.3], /* l */ 0, /* p */ 0)
 
 | Symbol | Type | Description |
 |--------|------|-------------|
-| `Bcdtpp` | class | Main projection orchestrator |
+| `TraceProjector` | class | Main projection orchestrator |
 | `Mesh` | class | Tetrahedral mesh topology and geometry |
 | `Whitney` | class | Barycentric coordinates and Whitney basis |
 | `PointLocator` | class | AABB tree point-in-tet locator |
@@ -136,25 +136,25 @@ include hand-written `.d.ts` files.
 ### Project a function on a unit cube mesh
 
 ```javascript
-import { Mesh, Whitney, Bcdtpp } from 'bcdtpp'
+import { Mesh, Whitney, TraceProjector } from 'traceprojector'
 
 const cube = unitCubeTetrahedralMesh(8, 8, 8)
 const mesh = new Mesh(cube.vertices, cube.tets)
 const whitney = new Whitney(mesh)
-const bcdtpp = new Bcdtpp(mesh, whitney, { quadratureOrder: 3 })
+const traceprojector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
 
-bcdtpp.computeBoundaryWeights()
-bcdtpp.buildPointLocator()
+traceprojector.computeBoundaryWeights()
+traceprojector.buildPointLocator()
 
 const f = (p) => Math.sin(p[0]) * Math.cos(p[1]) * Math.exp(p[2])
-const val = bcdtpp.projectH1(f, [0.25, 0.5, 0.5], 0)
+const val = traceprojector.projectH1(f, [0.25, 0.5, 0.5], 0)
 console.log(val)
 ```
 
 ### Inspect projection result
 
 ```javascript
-const result = bcdtpp.projectAtPoint(f, [0.5, 0.5, 0.5], 0, 0)
+const result = traceprojector.projectAtPoint(f, [0.5, 0.5, 0.5], 0, 0)
 console.log({
   value: result.value,
   tetIndex: result.tIdx,
@@ -183,7 +183,7 @@ Hand-written `.d.ts` declaration files are co-located with every source module i
 ```json
 {
   "compilerOptions": {
-    "types": ["bcdtpp"]
+    "types": ["traceprojector"]
   }
 }
 ```
@@ -195,9 +195,9 @@ Hand-written `.d.ts` declaration files are co-located with every source module i
 The UMD bundle is available via CDN:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/bcdtpp/dist/bcdtpp.umd.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/traceprojector/dist/traceprojector.umd.js"></script>
 <script>
-  const { Mesh, Whitney, Bcdtpp } = window.Bcdtpp
+  const { Mesh, Whitney, TraceProjector } = window.TraceProjector
 </script>
 ```
 
@@ -231,7 +231,7 @@ See [docs/math.md](docs/math.md) for the full mathematical exposition (de Rham c
 ```
 src/
   lib/
-    bcdtpp.js                 — Main projection class (Bcdtpp)
+    traceprojector.js                 — Main projection class (TraceProjector)
     mesh.js                   — Tetrahedral mesh topology & splits
     whitney.js                — Whitney forms and barycentric utilities
     quadrature.js             — Gaussian quadrature for triangles & tetrahedra
@@ -337,7 +337,7 @@ npm run build:full           # Build + regenerate API docs
 ### High Priority
 
 - **Vector-valued higher-order projections** (`l = 1, 2`, `p > 0`): Nédélec and Raviart-Thomas enrichment for `H(curl)` and `H(div)`.
-- **Adaptive mesh refinement support**: Integrate `MeshRefinement` APIs into `Bcdtpp` so boundary weights can be recomputed incrementally as the mesh refines.
+- **Adaptive mesh refinement support**: Integrate `MeshRefinement` APIs into `TraceProjector` so boundary weights can be recomputed incrementally as the mesh refines.
 
 ### Medium Priority
 
