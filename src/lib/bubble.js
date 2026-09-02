@@ -24,7 +24,7 @@ import {
  * b = lambda_0 * lambda_1 * lambda_2 * lambda_3 already has degree 4),
  * so projectHp returns the lowest-order projection without enrichment.
  */
-export class HigherOrderProjection {
+export class Bubble {
   /**
    * @param {!Mesh} mesh
    * @param {!Whitney} whitney
@@ -102,10 +102,10 @@ export class HigherOrderProjection {
       return []
     }
     return exponents.map(([a, b, c, d]) =>
-      HigherOrderProjection._pow(bary[0], a) *
-      HigherOrderProjection._pow(bary[1], b) *
-      HigherOrderProjection._pow(bary[2], c) *
-      HigherOrderProjection._pow(bary[3], d)
+      Bubble._pow(bary[0], a) *
+      Bubble._pow(bary[1], b) *
+      Bubble._pow(bary[2], c) *
+      Bubble._pow(bary[3], d)
     )
   }
 
@@ -192,7 +192,7 @@ export class HigherOrderProjection {
         code: 'HOP_BUBBLE_SOLVE_FAILED',
         severity: 'warn',
         message:
-          `HigherOrderProjection: bubble solve failed for tet ${tIdx}, p=${p}: ${e.message}`
+          `Bubble: bubble solve failed for tet ${tIdx}, p=${p}: ${e.message}`
       })
       return null
     }
@@ -266,13 +266,13 @@ export class HigherOrderProjection {
   evaluateBernsteinBasis (bary, p) {
     const exponents = this._getBernsteinExponents(p)
     return exponents.map(([i, j, k, l]) => {
-      const coeff = HigherOrderProjection._multinomial(p, [i, j, k, l])
+      const coeff = Bubble._multinomial(p, [i, j, k, l])
       return (
         coeff *
-        HigherOrderProjection._pow(bary[0], i) *
-        HigherOrderProjection._pow(bary[1], j) *
-        HigherOrderProjection._pow(bary[2], k) *
-        HigherOrderProjection._pow(bary[3], l)
+        Bubble._pow(bary[0], i) *
+        Bubble._pow(bary[1], j) *
+        Bubble._pow(bary[2], k) *
+        Bubble._pow(bary[3], l)
       )
     })
   }
@@ -373,7 +373,7 @@ export class HigherOrderProjection {
         code: 'HOP_L2_SOLVE_FAILED',
         severity: 'warn',
         message:
-          `HigherOrderProjection: L2 solve failed for tet ${tIdx}, p=${p}: ${e.message}`
+          `Bubble: L2 solve failed for tet ${tIdx}, p=${p}: ${e.message}`
       })
       const mean = this._cellMean(tIdx, u)
       return new Array(n).fill(mean)

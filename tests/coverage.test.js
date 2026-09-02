@@ -1,24 +1,24 @@
 /**
  * Broad coverage and edge-case tests: multi-tet projection correctness,
  * mesh validation errors, higher-order edge cases, singular-matrix handling,
- * BoundaryWeightComputer fault isolation, and scalar-to-vector projection
+ * Weight fault isolation, and scalar-to-vector projection
  * interoperability.
  */
 import { expect } from 'chai'
 import sinon from 'sinon'
 import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
-import { TraceProjector } from '../src/lib/traceProjector.js'
-import { HigherOrderProjection } from '../src/lib/higher_order_projection.js'
-import { BoundaryWeightComputer } from '../src/lib/boundary_weight_computer.js'
-import { MeshRefinement } from '../src/lib/mesh_refinement.js'
-import { MeshValidationError } from '../src/lib/errors.js'
+import { Projector } from '../src/lib/traceProjector.js'
+import { Bubble } from '../src/lib/higher_order_projection.js'
+import { Weight } from '../src/lib/boundary_weight_computer.js'
+import { Refinement } from '../src/lib/mesh_refinement.js'
+import { ValidateError } from '../src/lib/errors.js'
 import { factorial, dot } from '../src/lib/math_utils.js'
 import { generateUnitCubeMesh } from '../src/lib/mesh_generator.js'
 
 // Multi-tet mesh: exercises projection across shared faces/edges and
 // verifies commuting properties hold element-by-element.
-describe('Multi-tet TraceProjector Projections', () => {
+describe('Multi-tet Projector Projections', () => {
   const twoTet = {
     vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1], [1, 1, 1]],
     tetrahedra: [[0, 1, 2, 3], [1, 2, 3, 4]]
@@ -31,9 +31,9 @@ describe('Multi-tet TraceProjector Projections', () => {
   before(() => {
     mesh = new Mesh(twoTet.vertices, twoTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
-    traceProjector.buildPointLocator()
+    traceProjector.buildLocator()
   })
 
   it('projectH1 is exact for constant on multi-tet mesh', () => {
@@ -138,52 +138,52 @@ describe('Multi-tet TraceProjector Projections', () => {
   })
 })
 
-// Verifies that Mesh throws MeshValidationError for various invalid inputs.
+// Verifies that Mesh throws ValidateError for various invalid inputs.
 describe('Mesh Validation', () => {
-  it('throws MeshValidationError for negative orientation', () => {
+  it('throws ValidateError for negative orientation', () => {
     expect(() => new Mesh(
       [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 2, 1, 3]] // inverted: 0,2,1 instead of 0,1,2
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 
-  it('throws MeshValidationError for out-of-bounds index', () => {
+  it('throws ValidateError for out-of-bounds index', () => {
     expect(() => new Mesh(
       [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 1, 2, 4]]
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 
-  it('throws MeshValidationError for duplicate vertices in tet', () => {
+  it('throws ValidateError for duplicate vertices in tet', () => {
     expect(() => new Mesh(
       [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 1, 1, 3]]
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 
-  it('throws MeshValidationError for non-finite vertex', () => {
+  it('throws ValidateError for non-finite vertex', () => {
     expect(() => new Mesh(
       [[0, 0, NaN], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 1, 2, 3]]
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 
-  it('throws MeshValidationError for non-integer tetrahedron index', () => {
+  it('throws ValidateError for non-integer tetrahedron index', () => {
     expect(() => new Mesh(
       [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 1, 2, 3.5]]
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 
-  it('throws MeshValidationError for empty tetrahedra', () => {
-    expect(() => new Mesh([[0, 0, 0]], [])).to.throw(MeshValidationError)
+  it('throws ValidateError for empty tetrahedra', () => {
+    expect(() => new Mesh([[0, 0, 0]], [])).to.throw(ValidateError)
   })
 
   it('rejects degenerate (zero-volume) tetrahedra', () => {
     expect(() => new Mesh(
       [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]],
       [[0, 1, 2, 3]]
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 })
 
@@ -202,7 +202,7 @@ describe('Higher-Order Edge Cases', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -242,7 +242,7 @@ describe('Higher-Order Edge Cases', () => {
   })
 })
 
-// Verifies ProjectionError is thrown for invalid arguments to projection methods.
+// Verifies ProjectError is thrown for invalid arguments to projection methods.
 describe('Projection Error Handling', () => {
   const singleTet = {
     vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
@@ -256,9 +256,9 @@ describe('Projection Error Handling', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
-    traceProjector.buildPointLocator()
+    traceProjector.buildLocator()
   })
 
   it('throws for invalid tIdx type', () => {
@@ -282,7 +282,7 @@ describe('Projection Error Handling', () => {
   })
 })
 
-// Tests the HigherOrderProjection bubble solve path, including singular
+// Tests the Bubble bubble solve path, including singular
 // matrix fault injection via sinon stubs.
 describe('Bubble Projection', () => {
   afterEach(() => sinon.restore())
@@ -301,7 +301,7 @@ describe('Bubble Projection', () => {
   })
 
   it('solveBubbleProjection returns null for p < 4', () => {
-    const hop = new HigherOrderProjection(mesh, whitney)
+    const hop = new Bubble(mesh, whitney)
     const result = hop.solveBubbleProjection(0, 3, () => 1)
     expect(result).to.equal(null)
   })
@@ -311,20 +311,20 @@ describe('Bubble Projection', () => {
   })
 
   it('solveBubbleProjection computes coefficients for p = 4', () => {
-    const hop = new HigherOrderProjection(mesh, whitney)
+    const hop = new Bubble(mesh, whitney)
     const coeffs = hop.solveBubbleProjection(0, 4, (pt) => pt[0] * pt[0])
     expect(coeffs).to.not.equal(null)
     expect(coeffs.length).to.be.above(0)
   })
 
   it('evaluateBubble returns 0 when coeffs are empty', () => {
-    const hop = new HigherOrderProjection(mesh, whitney)
+    const hop = new Bubble(mesh, whitney)
     const val = hop.evaluateBubble(0, 4, [], [0.1, 0.1, 0.1])
     expect(val).to.equal(0)
   })
 
   it('evaluateBubble evaluates a bubble correction', () => {
-    const hop = new HigherOrderProjection(mesh, whitney)
+    const hop = new Bubble(mesh, whitney)
     const coeffs = hop.solveBubbleProjection(0, 4, (pt) => pt[0] * pt[0])
     const pt = [0.1, 0.1, 0.1]
     const val = hop.evaluateBubble(0, 4, coeffs, pt)
@@ -332,13 +332,13 @@ describe('Bubble Projection', () => {
   })
 
   it('evaluateL2Projection returns 0 for empty coeffs', () => {
-    const hop = new HigherOrderProjection(mesh, whitney)
+    const hop = new Bubble(mesh, whitney)
     const val = hop.evaluateL2Projection([], [0.25, 0.25, 0.25, 0.25], 1)
     expect(val).to.equal(0)
   })
 
   it('solveL2Projection returns empty array for negative p', () => {
-    const hop = new HigherOrderProjection(mesh, whitney)
+    const hop = new Bubble(mesh, whitney)
     const coeffs = hop.solveL2Projection(0, -1, () => 1)
     expect(coeffs).to.deep.equal([])
   })
@@ -350,7 +350,7 @@ describe('Bubble Projection', () => {
       [[0, 1, 2, 3]]
     )
     const whitney = new Whitney(mesh)
-    const hop = new HigherOrderProjection(mesh, whitney, 3, warnSpy)
+    const hop = new Bubble(mesh, whitney, 3, warnSpy)
     // Inject a singular mass matrix to force the solver to fail.
     hop.assembleBubbleMass = () => [[0]]
     const coeffs = hop.solveBubbleProjection(0, 4, () => 1)
@@ -365,7 +365,7 @@ describe('Bubble Projection', () => {
       [[0, 1, 2, 3]]
     )
     const whitney = new Whitney(mesh)
-    const hop = new HigherOrderProjection(mesh, whitney, 3, warnSpy)
+    const hop = new Bubble(mesh, whitney, 3, warnSpy)
     // Force zero volume to make the mass matrix singular.
     const origGetVolume = mesh.getVolume.bind(mesh)
     mesh.getVolume = () => 0
@@ -381,9 +381,9 @@ describe('Bubble Projection', () => {
   })
 })
 
-// Verifies that BoundaryWeightComputer isolates per-vertex failures:
+// Verifies that Weight isolates per-vertex failures:
 // zero star area and adjacency exceptions emit warnings instead of throwing.
-describe('BoundaryWeightComputer fault isolation', () => {
+describe('Weight fault isolation', () => {
   afterEach(() => sinon.restore())
 
   it('warns and skips vertex with zero star area', () => {
@@ -392,12 +392,12 @@ describe('BoundaryWeightComputer fault isolation', () => {
       [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 1, 2, 3]]
     )
-    const refinement = new MeshRefinement(mesh)
+    const refinement = new Refinement(mesh)
     refinement.computeWorseyFarinSplit()
     // Force all face areas to zero so starArea falls below the threshold.
     const origGetFaceArea = mesh.getFaceArea.bind(mesh)
     mesh.getFaceArea = (fIdx) => 0
-    const bwc = new BoundaryWeightComputer(mesh, refinement, warnSpy)
+    const bwc = new Weight(mesh, refinement, warnSpy)
     bwc.compute()
     expect(warnSpy.called).to.equal(true)
     expect(warnSpy.getCall(0).args[0].code).to.equal('BWC_ZERO_STAR_AREA')
@@ -412,9 +412,9 @@ describe('BoundaryWeightComputer fault isolation', () => {
       [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
       [[0, 1, 2, 3]]
     )
-    const refinement = new MeshRefinement(mesh)
+    const refinement = new Refinement(mesh)
     refinement.computeWorseyFarinSplit()
-    const bwc = new BoundaryWeightComputer(mesh, refinement, warnSpy)
+    const bwc = new Weight(mesh, refinement, warnSpy)
     // Inject a fault by temporarily corrupting the mesh adjacency.
     const orig = mesh.getBoundaryStar
     mesh.getBoundaryStar = (vIdx) => {
@@ -437,7 +437,7 @@ describe('Scalar inputs to vector projections', () => {
 
   before(() => {
     whitney = new Whitney(cubeMesh)
-    traceProjector = new TraceProjector(cubeMesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(cubeMesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -466,6 +466,6 @@ describe('Whitney degenerate tet handling', () => {
     expect(() => new Mesh(
       [[0, 0, 0], [1, 0, 0], [2, 0, 0], [3, 0, 0]],
       [[0, 1, 2, 3]]
-    )).to.throw(MeshValidationError)
+    )).to.throw(ValidateError)
   })
 })

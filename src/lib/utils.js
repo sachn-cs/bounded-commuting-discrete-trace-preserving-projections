@@ -1,12 +1,12 @@
 /**
  * Pure JavaScript linear algebra and vector utilities.
  *
- * This module replaces the mathjs dependency for the core TraceProjector library,
+ * This module replaces the mathjs dependency for the core Projector library,
  * ensuring a pure JavaScript implementation with no external runtime math
  * dependencies.
  */
 
-import { SingularMatrixError } from './errors.js'
+import { SingularError } from './errors.js'
 
 /** @const {number} */
 const EPSILON = 1e-12
@@ -202,7 +202,7 @@ export function luSolve (a, b) {
       }
     }
     if (maxVal < tol) {
-      throw new SingularMatrixError('Singular or near-singular matrix')
+      throw new SingularError('Singular or near-singular matrix')
     }
     if (maxRow !== col) {
       [aug[col], aug[maxRow]] = [aug[maxRow], aug[col]]
@@ -238,7 +238,7 @@ export function inverse3x3 (m) {
     m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) +
     m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
   if (Math.abs(det) < EPSILON) {
-    throw new SingularMatrixError('Singular 3x3 matrix')
+    throw new SingularError('Singular 3x3 matrix')
   }
   const invDet = 1 / det
   return [
@@ -272,7 +272,7 @@ export function solve3x3 (a, b) {
     a[0][1] * (a[1][0] * a[2][2] - a[1][2] * a[2][0]) +
     a[0][2] * (a[1][0] * a[2][1] - a[1][1] * a[2][0])
   if (Math.abs(det) < EPSILON) {
-    throw new SingularMatrixError('Singular 3x3 matrix')
+    throw new SingularError('Singular 3x3 matrix')
   }
 
   const x0 =

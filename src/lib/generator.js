@@ -3,7 +3,7 @@
  */
 
 import { Mesh } from './mesh.js'
-import { MeshValidationError } from './errors.js'
+import { ValidateError } from './errors.js'
 
 import { tetDeterminant } from './math_utils.js'
 
@@ -17,7 +17,7 @@ import { tetDeterminant } from './math_utils.js'
  */
 export function generateUnitCubeMesh (n) {
   if (!Number.isInteger(n) || n < 1) {
-    throw new MeshValidationError('n must be a positive integer')
+    throw new ValidateError('n must be a positive integer')
   }
 
   const vertices = []

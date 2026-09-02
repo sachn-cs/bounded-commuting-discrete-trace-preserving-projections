@@ -23,7 +23,7 @@ import {
   factorial,
   numericalGradient
 } from '../src/lib/math_utils.js'
-import { SingularMatrixError } from '../src/lib/errors.js'
+import { SingularError } from '../src/lib/errors.js'
 
 describe('Math Utils', () => {
   it('dot product is correct', () => {
@@ -85,13 +85,13 @@ describe('Math Utils', () => {
     expect(x[1]).to.be.closeTo(2.2, Math.pow(10, -6))
   })
 
-  it('luSolve throws SingularMatrixError for singular matrix', () => {
+  it('luSolve throws SingularError for singular matrix', () => {
     const a = [
       [1, 2],
       [2, 4]
     ]
     const b = [3, 6]
-    expect(() => luSolve(a, b)).to.throw(SingularMatrixError)
+    expect(() => luSolve(a, b)).to.throw(SingularError)
   })
 
   it('inverse3x3 works', () => {
@@ -106,13 +106,13 @@ describe('Math Utils', () => {
     expect(inv[2][2]).to.be.closeTo(1 / 3, Math.pow(10, -10))
   })
 
-  it('inverse3x3 throws SingularMatrixError for singular matrix', () => {
+  it('inverse3x3 throws SingularError for singular matrix', () => {
     const m = [
       [1, 2, 3],
       [2, 4, 6],
       [3, 6, 9]
     ]
-    expect(() => inverse3x3(m)).to.throw(SingularMatrixError)
+    expect(() => inverse3x3(m)).to.throw(SingularError)
   })
 
   it('solve3x3 works', () => {
@@ -128,14 +128,14 @@ describe('Math Utils', () => {
     expect(x[2]).to.be.closeTo(1, Math.pow(10, -6))
   })
 
-  it('solve3x3 throws SingularMatrixError for singular matrix', () => {
+  it('solve3x3 throws SingularError for singular matrix', () => {
     const a = [
       [1, 2, 3],
       [2, 4, 6],
       [3, 6, 9]
     ]
     const b = [1, 2, 3]
-    expect(() => solve3x3(a, b)).to.throw(SingularMatrixError)
+    expect(() => solve3x3(a, b)).to.throw(SingularError)
   })
 
   it('tetDeterminant is positive for right-handed tet', () => {
@@ -170,7 +170,7 @@ describe('Math Utils', () => {
       [0, 0, 1]
     ]
     const b = [0, 2, 3]
-    expect(() => luSolve(a, b)).to.throw(SingularMatrixError)
+    expect(() => luSolve(a, b)).to.throw(SingularError)
   })
 
   it('factorial(0) is 1', () => {

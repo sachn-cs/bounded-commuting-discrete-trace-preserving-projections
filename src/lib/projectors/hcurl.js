@@ -15,7 +15,7 @@ import { lineQuadrature } from '../quadrature.js'
  * (∫_e u·t ds); interior edges use midpoint evaluation of the tangential
  * component.
  */
-export class HcurlProjector {
+export class Hcurl {
   /**
    * @param {!Mesh} mesh
    * @param {!Whitney} whitney

@@ -4,7 +4,7 @@
  */
 import { expect } from 'chai'
 import { Whitney } from '../src/lib/whitney.js'
-import { TraceProjector } from '../src/lib/traceProjector.js'
+import { Projector } from '../src/lib/traceProjector.js'
 import {
   generateUnitCubeMesh,
   generateSingleTetMesh
@@ -148,7 +148,7 @@ describe('Convergence Harness Utilities', () => {
 describe('p-Convergence on Single Tet', () => {
   const mesh = generateSingleTetMesh()
   const whitney = new Whitney(mesh)
-  const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+  const traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
   traceProjector.computeBoundaryWeights()
 
   // Quadratic exact function: u(x,y,z) = x^2 + y^2 + z^2.
@@ -204,7 +204,7 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      const traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
       traceProjector.computeBoundaryWeights()
 
       const projFn = (tIdx, pt) => traceProjector.projectHp(exactScalar, pt, tIdx, 0, 0)
@@ -240,7 +240,7 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      const traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
       traceProjector.computeBoundaryWeights()
 
       const projFn = (tIdx, pt) => traceProjector.projectHp(exactScalar, pt, tIdx, 0, 0)
@@ -272,7 +272,7 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      const traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
       traceProjector.computeBoundaryWeights()
 
       const projFn = (tIdx, pt) => traceProjector.projectHp(exactScalar, pt, tIdx, 3, 0)
@@ -305,7 +305,7 @@ describe('h-Convergence on Cube Meshes', () => {
 
     for (const mesh of meshes) {
       const whitney = new Whitney(mesh)
-      const traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+      const traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
       traceProjector.computeBoundaryWeights()
 
       const projFn = (tIdx, pt) => traceProjector.projectHp(exactVector, pt, tIdx, 1, 0)

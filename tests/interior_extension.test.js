@@ -7,7 +7,7 @@
 import { expect } from 'chai'
 import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
-import { TraceProjector } from '../src/lib/traceProjector.js'
+import { Projector } from '../src/lib/traceProjector.js'
 import { generateUnitCubeMesh } from '../src/lib/mesh_generator.js'
 
 const singleTet = {
@@ -25,7 +25,7 @@ describe('Pi_ring^l interior projector', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -111,7 +111,7 @@ describe('Discrete extension operator E^l', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -185,7 +185,7 @@ describe('Decomposition Pi^l = Pi_ring^l + Pi_partial^l', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -231,7 +231,7 @@ describe('Interior projector on multi-tet mesh', () => {
   before(() => {
     mesh = generateUnitCubeMesh(2)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -300,7 +300,7 @@ describe('Extension operator on multi-tet mesh', () => {
   before(() => {
     mesh = generateUnitCubeMesh(2)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -377,7 +377,7 @@ describe('Commuting diagrams for ring + extension', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 
@@ -452,7 +452,7 @@ describe('Global projector Pi^l', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
   })
 

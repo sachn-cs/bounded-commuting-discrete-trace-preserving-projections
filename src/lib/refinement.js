@@ -8,7 +8,7 @@
  *
  * Both splits are idempotent: calling them more than once is a no-op.
  */
-export class MeshRefinement {
+export class Refinement {
   /** @type {boolean} */
   _alfeldDone
   /** @type {boolean} */

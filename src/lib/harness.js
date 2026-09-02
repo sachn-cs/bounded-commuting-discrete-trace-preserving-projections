@@ -1,12 +1,12 @@
 /**
- * Convergence experiment harness for TraceProjector projection operators.
+ * Convergence experiment harness for Projector projection operators.
  *
  * Computes discrete error norms and convergence rates on a sequence of meshes.
  */
 
 import { integrateTetrahedron } from './quadrature.js'
-import { ProjectionError } from './errors.js'
-import { TraceProjector } from './traceprojector.js'
+import { ProjectError } from './errors.js'
+import { Projector } from './traceprojector.js'
 import { Whitney } from './whitney.js'
 
 /**
@@ -15,7 +15,7 @@ import { Whitney } from './whitney.js'
    * err_L2^2 = Σ_T ∫_T |u_exact - u_proj|^2 dx
    *
  * @param {!Mesh} mesh
- * @param {!TraceProjector} traceProjector
+ * @param {!Projector} traceProjector
  * @param {function(!Array<number>): number} exactFn
  * @param {function(number, !Array<number>): number} projFn
  *   Function taking (tIdx, point) and returning the projected value at that point.
@@ -41,7 +41,7 @@ export function computeL2ErrorScalar (mesh, traceProjector, exactFn, projFn) {
    * err_L2^2 = Σ_T ∫_T |v_exact - v_proj|^2 dx
    *
  * @param {!Mesh} mesh
- * @param {!TraceProjector} traceProjector
+ * @param {!Projector} traceProjector
  * @param {function(!Array<number>): !Array<number>} exactFn
  * @param {function(number, !Array<number>): !Array<number>} projFn
  * @return {number}
@@ -70,7 +70,7 @@ export function computeL2ErrorVector (mesh, traceProjector, exactFn, projFn) {
    * err_H1^2 = Σ_T ∫_T |grad(u_exact) - grad(u_proj)|^2 dx
    *
  * @param {!Mesh} mesh
- * @param {!TraceProjector} traceProjector
+ * @param {!Projector} traceProjector
  * @param {function(!Array<number>): number} exactFn
  * @param {function(number, !Array<number>): number} projFn
  * @return {number}
@@ -178,11 +178,11 @@ export function runConvergenceStudy (meshes, config) {
 
   for (let i = 0; i < meshes.length; i++) {
     const mesh = meshes[i]
-    // Re-create TraceProjector for each mesh since it holds mesh-specific data.
+    // Re-create Projector for each mesh since it holds mesh-specific data.
     const w = new Whitney(mesh)
-    const b = new TraceProjector(mesh, w, { quadratureOrder })
+    const b = new Projector(mesh, w, { quadratureOrder })
     b.computeBoundaryWeights()
-    b.buildPointLocator()
+    b.buildLocator()
 
     const h = estimateMeshSize(mesh)
     let l2Err
@@ -198,7 +198,7 @@ export function runConvergenceStudy (meshes, config) {
       l2Err = computeL2ErrorScalar(mesh, b, exactScalar, projFn)
     } else if (l === 1 || l === 2) {
       if (!exactVector) {
-        throw new ProjectionError('exactVector is required for l=1 or l=2')
+        throw new ProjectError('exactVector is required for l=1 or l=2')
       }
       const projFn = (tIdx, pt) => b.projectHp(exactVector, pt, tIdx, l, p)
       l2Err = computeL2ErrorVector(mesh, b, exactVector, projFn)

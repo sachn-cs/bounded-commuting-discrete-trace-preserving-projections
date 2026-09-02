@@ -1,5 +1,5 @@
 /**
- * Core projection correctness tests for the TraceProjector class on a single
+ * Core projection correctness tests for the Projector class on a single
  * tetrahedron.  Verifies exactness for constants/linears, commuting
  * properties (grad Pi^0 = 0, div Pi^2 = Pi^3 div), and higher-order
  * enrichment behavior.
@@ -7,11 +7,11 @@
 import { expect } from 'chai'
 import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
-import { TraceProjector } from '../src/lib/traceprojector.js'
+import { Projector } from '../src/lib/traceprojector.js'
 
 // Single-tet mesh: all 4 vertices are boundary, which exercises the
 // boundary-weight machinery for every projection.
-describe('TraceProjector Projections', () => {
+describe('Projector Projections', () => {
   const singleTet = {
     vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
     tetrahedra: [[0, 1, 2, 3]]
@@ -24,9 +24,9 @@ describe('TraceProjector Projections', () => {
   before(() => {
     mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
     whitney = new Whitney(mesh)
-    traceProjector = new TraceProjector(mesh, whitney, { quadratureOrder: 3 })
+    traceProjector = new Projector(mesh, whitney, { quadratureOrder: 3 })
     traceProjector.computeBoundaryWeights()
-    traceProjector.buildPointLocator()
+    traceProjector.buildLocator()
   })
 
   it('projectH1 is exact for constant function', () => {

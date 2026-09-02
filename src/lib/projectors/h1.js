@@ -12,14 +12,14 @@ import { triangleArea } from '../math_utils.js'
  *
  * Projects scalar functions onto the space of continuous piecewise-linear
  * functions (P1 Lagrange) on a tetrahedral mesh.  Boundary vertices use
- * weighted surface-patch integrals (computed by {@link BoundaryWeightComputer})
+ * weighted surface-patch integrals (computed by {@link Weight})
  * to ensure trace preservation.  Interior vertices use nodal interpolation.
  */
-export class H1Projector {
+export class H1 {
   /**
    * @param {!Mesh} mesh
    * @param {!Whitney} whitney
-   * @param {!MeshRefinement} meshRefinement
+   * @param {!Refinement} meshRefinement
    */
   constructor (mesh, whitney, meshRefinement) {
     this.mesh = mesh

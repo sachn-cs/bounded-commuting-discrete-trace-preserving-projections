@@ -12,7 +12,7 @@
  * axis at the median centroid, guaranteeing a balanced tree.  Leaf nodes
  * store up to maxLeafSize tetrahedra and are tested exhaustively.
  */
-export class PointLocator {
+export class Locator {
   /**
    * @param {!Mesh} mesh
    * @param {number=} maxLeafSize - Maximum tets per leaf node (default 8).

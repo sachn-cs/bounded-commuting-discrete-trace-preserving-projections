@@ -2,14 +2,14 @@
  * Tetrahedral mesh data structure with topological connectivity, geometry,
  * and boundary extraction.
  *
- * This module provides the core Mesh class used throughout the TraceProjector library.
+ * This module provides the core Mesh class used throughout the Projector library.
  * The Mesh is constructed once and treated as immutable for the duration of a
  * projection computation.  Mesh refinement operators (Alfeld split,
- * Worsey-Farin split) live in a separate {@link MeshRefinement} class.
+ * Worsey-Farin split) live in a separate {@link Refinement} class.
  */
 
 import { triangleArea, tetDeterminant, tetVolume } from './math_utils.js'
-import { MeshValidationError } from './errors.js'
+import { ValidateError } from './errors.js'
 
 /**
  * Sorts three numbers in ascending order.
@@ -29,7 +29,7 @@ function sort3 (a, b, c) {
  * Tetrahedral mesh data structure with topological connectivity and boundary
  * extraction.  This class is intentionally a *pure data structure*; mesh
  * refinement operators (Alfeld split, Worsey-Farin split) live in
- * {@link MeshRefinement}.
+ * {@link Refinement}.
  */
 
 export class Mesh {
@@ -101,31 +101,31 @@ export class Mesh {
    */
   static _validateInput (vertices, tetrahedra) {
     if (!Array.isArray(vertices) || vertices.length === 0) {
-      throw new MeshValidationError('vertices must be a non-empty array')
+      throw new ValidateError('vertices must be a non-empty array')
     }
     if (!Array.isArray(tetrahedra) || tetrahedra.length === 0) {
-      throw new MeshValidationError('tetrahedra must be a non-empty array')
+      throw new ValidateError('tetrahedra must be a non-empty array')
     }
     for (let i = 0; i < vertices.length; i++) {
       const v = vertices[i]
       if (!Array.isArray(v) || v.length !== 3 || !v.every((n) => typeof n === 'number' && Number.isFinite(n))) {
-        throw new MeshValidationError(`Vertex ${i} must be an array of 3 finite numbers`)
+        throw new ValidateError(`Vertex ${i} must be an array of 3 finite numbers`)
       }
     }
     for (let i = 0; i < tetrahedra.length; i++) {
       const t = tetrahedra[i]
       if (!Array.isArray(t) || t.length !== 4 || !t.every((n) => typeof n === 'number' && Number.isInteger(n))) {
-        throw new MeshValidationError(`Tetrahedron ${i} must be an array of 4 integer indices`)
+        throw new ValidateError(`Tetrahedron ${i} must be an array of 4 integer indices`)
       }
       for (let j = 0; j < 4; j++) {
         if (t[j] < 0 || t[j] >= vertices.length) {
-          throw new MeshValidationError(
+          throw new ValidateError(
             `Tetrahedron ${i} contains out-of-bounds vertex index ${t[j]} (valid range: 0-${vertices.length - 1})`
           )
         }
       }
       if (new Set(t).size !== 4) {
-        throw new MeshValidationError(`Tetrahedron ${i} contains duplicate vertex indices`)
+        throw new ValidateError(`Tetrahedron ${i} contains duplicate vertex indices`)
       }
 
       // Orientation check: signed volume must be strictly positive.
@@ -135,7 +135,7 @@ export class Mesh {
       const v3 = vertices[t[3]]
       const signedVol = tetDeterminant(v0, v1, v2, v3)
       if (signedVol <= 1e-12) {
-        throw new MeshValidationError(
+        throw new ValidateError(
           `Tetrahedron ${i} has non-positive or degenerate volume (signedVol=${signedVol}). ` +
             'Reorder vertices to satisfy the right-hand rule, or check for collinear/coplanar vertices.'
         )

@@ -16,7 +16,7 @@ import { triangleQuadrature, barycentricToCartesian } from '../quadrature.js'
  * consistent coefficient with both adjacent tetrahedra and the discrete
  * normal trace is continuous across the mesh.
  */
-export class HdivProjector {
+export class Hdiv {
   /**
    * @param {!Mesh} mesh
    * @param {!Whitney} whitney

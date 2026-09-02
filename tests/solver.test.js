@@ -1,16 +1,16 @@
 /**
- * Tests for the LocalSolver static methods: surface stiffness assembly
+ * Tests for the Solver static methods: surface stiffness assembly
  * (symmetry, degenerate-triangle rejection) and constrained solve
  * (ill-conditioning warning, singularity detection, edge cases).
  */
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { LocalSolver } from '../src/lib/local_solver.js'
-import { SingularMatrixError } from '../src/lib/errors.js'
+import { Solver } from '../src/lib/local_solver.js'
+import { SingularError } from '../src/lib/errors.js'
 
-// Tests for LocalSolver: surface stiffness symmetry, ill-conditioning
+// Tests for Solver: surface stiffness symmetry, ill-conditioning
 // detection, singular matrix rejection, and degenerate triangle handling.
-describe('LocalSolver', () => {
+describe('Solver', () => {
   afterEach(() => sinon.restore())
 
   // Tolerance 1e-10: compares K[i][j] to K[j][i] for floating-point
@@ -18,7 +18,7 @@ describe('LocalSolver', () => {
   it('assembleSurfaceStiffness returns symmetric matrix', () => {
     const vertices = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]]
     const triangles = [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]
-    const K = LocalSolver.assembleSurfaceStiffness(vertices, triangles)
+    const K = Solver.assembleSurfaceStiffness(vertices, triangles)
     const n = K.length
     for (let i = 0; i < n; i++) {
       for (let j = 0; j < n; j++) {
@@ -36,20 +36,20 @@ describe('LocalSolver', () => {
       [0, 0, 1]
     ]
     const b = [0, 0, 0]
-    LocalSolver.solveWithConstraint(K, b, warnSpy)
+    Solver.solveWithConstraint(K, b, warnSpy)
     expect(warnSpy.called).to.equal(true)
     expect(warnSpy.getCall(0).args[0].code).to.equal('LOCAL_SOLVER_ILL_CONDITIONED')
     expect(warnSpy.getCall(0).args[0].message).to.match(/ill-conditioned/)
   })
 
-  it('solveWithConstraint throws SingularMatrixError for singular matrix', () => {
+  it('solveWithConstraint throws SingularError for singular matrix', () => {
     const K = [
       [1, 1, 1],
       [1, 1, 1],
       [1, 1, 1]
     ]
     const b = [0, 0, 0]
-    expect(() => LocalSolver.solveWithConstraint(K, b)).to.throw(SingularMatrixError)
+    expect(() => Solver.solveWithConstraint(K, b)).to.throw(SingularError)
   })
 
   it('solveWithConstraint honors all stiffness rows and the mean-zero constraint', () => {
@@ -59,9 +59,9 @@ describe('LocalSolver', () => {
     // the bordered solve must not.
     const vertices = [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]]
     const triangles = [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]
-    const K = LocalSolver.assembleSurfaceStiffness(vertices, triangles)
+    const K = Solver.assembleSurfaceStiffness(vertices, triangles)
     const b = [3, -1, -1, -1]
-    const x = LocalSolver.solveWithConstraint(K, b)
+    const x = Solver.solveWithConstraint(K, b)
     expect(x.length).to.equal(4)
     const sumX = x.reduce((s, v) => s + v, 0)
     expect(sumX).to.be.closeTo(0, Math.pow(10, -9))
@@ -79,13 +79,13 @@ describe('LocalSolver', () => {
   it('assembleSurfaceStiffness throws for degenerate triangle', () => {
     const vertices = [[0, 0, 0], [1, 0, 0], [2, 0, 0]]
     const triangles = [[0, 1, 2]]
-    expect(() => LocalSolver.assembleSurfaceStiffness(vertices, triangles)).to.throw(
-      SingularMatrixError
+    expect(() => Solver.assembleSurfaceStiffness(vertices, triangles)).to.throw(
+      SingularError
     )
   })
 
   it('solveWithConstraint returns empty array for n=0', () => {
-    const result = LocalSolver.solveWithConstraint([], [])
+    const result = Solver.solveWithConstraint([], [])
     expect(result).to.deep.equal([])
   })
 })

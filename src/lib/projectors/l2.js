@@ -5,7 +5,7 @@
  */
 
 import { integrateTetrahedron } from '../quadrature.js'
-import { ProjectionError } from '../errors.js'
+import { ProjectError } from '../errors.js'
 
 /**
  * Lowest-order L2 (l=3) cell-based projector implementing Pi^3.
@@ -14,7 +14,7 @@ import { ProjectionError } from '../errors.js'
  * on a tetrahedral mesh.  The projection is simply the volume-weighted
  * average of the function over each tetrahedron.
  */
-export class L2Projector {
+export class L2 {
   /**
    * @param {!Mesh} mesh
    * @param {!Whitney} whitney
@@ -36,7 +36,7 @@ export class L2Projector {
     const verts = tet.map((i) => this.mesh.getVertices()[i])
     const vol = this.mesh.getVolume(tIdx)
     if (vol < 1e-12) {
-      throw new ProjectionError(
+      throw new ProjectError(
         `Cannot perform L2 projection on degenerate tetrahedron ${tIdx}`
       )
     }

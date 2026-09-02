@@ -3,7 +3,7 @@
  */
 
 import { cross, inverse3x3, tetDeterminant } from './math_utils.js'
-import { ProjectionError } from './errors.js'
+import { ProjectError } from './errors.js'
 
 /**
  * Barycentric coordinate computation and Whitney finite-element basis
@@ -73,7 +73,7 @@ export class Whitney {
   getBarycentric (tIdx, point) {
     if (!Array.isArray(point) || point.length !== 3 ||
         !point.every((n) => typeof n === 'number' && Number.isFinite(n))) {
-      throw new ProjectionError(
+      throw new ProjectError(
         `point must be an array of 3 finite numbers, got ${JSON.stringify(point)}`
       )
     }
@@ -87,7 +87,7 @@ export class Whitney {
     const det = this._tetDetCache[tIdx] ?? tetDeterminant(v[3], v[0], v[1], v[2])
 
     if (Math.abs(det) < 1e-12) {
-      throw new ProjectionError('Degenerate tetrahedron')
+      throw new ProjectError('Degenerate tetrahedron')
     }
 
     const b = [point[0] - v[3][0], point[1] - v[3][1], point[2] - v[3][2]]
@@ -108,7 +108,7 @@ export class Whitney {
   getGradBarycentric (tIdx) {
     const gradL = this._gradLCache[tIdx]
     if (!gradL) {
-      throw new ProjectionError(`Degenerate tetrahedron ${tIdx}`)
+      throw new ProjectError(`Degenerate tetrahedron ${tIdx}`)
     }
     return gradL
   }
@@ -127,7 +127,7 @@ export class Whitney {
   getEdgeBasis (tIdx, bary) {
     if (!Array.isArray(bary) || bary.length !== 4 ||
         !bary.every((n) => typeof n === 'number' && Number.isFinite(n))) {
-      throw new ProjectionError(
+      throw new ProjectError(
         `bary must be an array of 4 finite numbers, got ${JSON.stringify(bary)}`
       )
     }
@@ -160,7 +160,7 @@ export class Whitney {
   getFaceBasis (tIdx, bary) {
     if (!Array.isArray(bary) || bary.length !== 4 ||
         !bary.every((n) => typeof n === 'number' && Number.isFinite(n))) {
-      throw new ProjectionError(
+      throw new ProjectError(
         `bary must be an array of 4 finite numbers, got ${JSON.stringify(bary)}`
       )
     }

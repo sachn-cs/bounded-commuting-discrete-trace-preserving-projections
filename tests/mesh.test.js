@@ -1,11 +1,11 @@
 /**
- * Tests for the Mesh and MeshRefinement classes: topology construction
+ * Tests for the Mesh and Refinement classes: topology construction
  * (faces, edges, boundary), geometry (volume, normals), orientation
  * signs, vertex stars, and Alfeld/Worsey-Farin split idempotency.
  */
 import { expect } from 'chai'
 import { Mesh } from '../src/lib/mesh.js'
-import { MeshRefinement } from '../src/lib/mesh_refinement.js'
+import { Refinement } from '../src/lib/mesh_refinement.js'
 
 // Verifies Mesh topology construction: faces, edges, boundary sets,
 // volume, orientation signs, vertex stars, and multi-tet connectivity.
@@ -76,7 +76,7 @@ describe('Mesh', () => {
 
 // Verifies Alfeld and Worsey-Farin mesh refinement: split counts,
 // sub-triangle/tet counts, and idempotency of both splits.
-describe('MeshRefinement', () => {
+describe('Refinement', () => {
   const singleTet = {
     vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
     tetrahedra: [[0, 1, 2, 3]]
@@ -84,7 +84,7 @@ describe('MeshRefinement', () => {
 
   it('computes Alfeld split', () => {
     const mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
-    const refinement = new MeshRefinement(mesh)
+    const refinement = new Refinement(mesh)
     refinement.computeAlfeldSplit()
     expect(refinement.alfeldTriangles.length).to.equal(4)
     const totalSubTris = refinement.alfeldTriangles.reduce(
@@ -96,7 +96,7 @@ describe('MeshRefinement', () => {
 
   it('computes Worsey-Farin split', () => {
     const mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
-    const refinement = new MeshRefinement(mesh)
+    const refinement = new Refinement(mesh)
     refinement.computeWorseyFarinSplit()
     expect(refinement.worseyFarinTetrahedra.length).to.equal(1)
     expect(refinement.worseyFarinTetrahedra[0].tetrahedra.length).to.equal(12)
@@ -104,7 +104,7 @@ describe('MeshRefinement', () => {
 
   it('Alfeld split is idempotent', () => {
     const mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
-    const refinement = new MeshRefinement(mesh)
+    const refinement = new Refinement(mesh)
     refinement.computeAlfeldSplit()
     const vCountAfterFirst = mesh.vertexCount
     refinement.computeAlfeldSplit()
@@ -113,7 +113,7 @@ describe('MeshRefinement', () => {
 
   it('Worsey-Farin split is idempotent', () => {
     const mesh = new Mesh(singleTet.vertices, singleTet.tetrahedra)
-    const refinement = new MeshRefinement(mesh)
+    const refinement = new Refinement(mesh)
     refinement.computeWorseyFarinSplit()
     const vCountAfterFirst = mesh.vertexCount
     refinement.computeWorseyFarinSplit()

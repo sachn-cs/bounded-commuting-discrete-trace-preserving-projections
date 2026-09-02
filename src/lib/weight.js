@@ -1,12 +1,12 @@
 /**
- * Boundary weight computation for TraceProjector projections.
+ * Boundary weight computation for Projector projections.
  *
  * Computes vertex patch weights, edge tangents/lengths, and face normals/areas
  * used by trace-preserving boundary DoFs.
  */
 
 import { subtract, norm, triangleArea } from './math_utils.js'
-import { LocalSolver } from './local_solver.js'
+import { Solver } from './local_solver.js'
 
 /**
  * Computes boundary patch weights used by the trace-preserving projection
@@ -17,10 +17,10 @@ import { LocalSolver } from './local_solver.js'
  * Local failures (e.g. degenerate patches) emit warnings rather than throwing
  * so that a single bad element does not halt the entire mesh projection.
  */
-export class BoundaryWeightComputer {
+export class Weight {
   /**
    * @param {!Mesh} mesh
-   * @param {!MeshRefinement} meshRefinement
+   * @param {!Refinement} meshRefinement
    * @param {function=} onWarning - Callback invoked with a warning context
    *   object when a local weight computation fails or is ill-conditioned.
    */
@@ -65,7 +65,7 @@ export class BoundaryWeightComputer {
         const localTris = triangles.map((t) => t.map((v) => invNodeMap.get(v)))
         const localVerts = nodeMap.map((v) => this.mesh.vertices[v])
 
-        const K = LocalSolver.assembleSurfaceStiffness(localVerts, localTris)
+        const K = Solver.assembleSurfaceStiffness(localVerts, localTris)
         const b = new Array(nodeMap.length).fill(0)
 
         const starArea = starFaces.reduce(
@@ -77,7 +77,7 @@ export class BoundaryWeightComputer {
             code: 'BWC_ZERO_STAR_AREA',
             severity: 'warn',
             message:
-              `BoundaryWeightComputer: vertex ${vIdx} has zero or ` +
+              `Weight: vertex ${vIdx} has zero or ` +
               `near-zero star area (${starArea}). Skipping weight computation.`
           })
           continue
@@ -95,14 +95,14 @@ export class BoundaryWeightComputer {
           })
         })
 
-        const psi = LocalSolver.solveWithConstraint(K, b, this.onWarning)
+        const psi = Solver.solveWithConstraint(K, b, this.onWarning)
         zeta0Vertex.set(vIdx, { nodeMap, invNodeMap, psi })
       } catch (e) {
         this.onWarning({
           code: 'BWC_VERTEX_FAILURE',
           severity: 'warn',
           message:
-            'BoundaryWeightComputer: failed to compute weights for ' +
+            'Weight: failed to compute weights for ' +
             `vertex ${vIdx}: ${e.message}`
         })
       }

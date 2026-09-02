@@ -4,7 +4,7 @@
  */
 
 import { dot, cross, subtract, norm, zeros, luSolve, infinityNorm } from './math_utils.js'
-import { SingularMatrixError } from './errors.js'
+import { SingularError } from './errors.js'
 
 /**
  * Static utility for assembling surface-patch stiffness matrices and solving
@@ -14,7 +14,7 @@ import { SingularMatrixError } from './errors.js'
  * system, so every stiffness row is preserved and the recovered solution
  * satisfies the original equations up to the constraint multiplier.
  */
-export class LocalSolver {
+export class Solver {
   /**
    * Assembles the surface stiffness matrix for -Delta_Gamma.
    * @param {!Array<!Array<number>>} vertices
@@ -27,7 +27,7 @@ export class LocalSolver {
 
     triangles.forEach((tri) => {
       const v = tri.map((i) => vertices[i])
-      const ke = LocalSolver._triangleStiffness(v)
+      const ke = Solver._triangleStiffness(v)
 
       for (let i = 0; i < 3; i++) {
         for (let j = 0; j < 3; j++) {
@@ -53,7 +53,7 @@ export class LocalSolver {
     const area = 0.5 * norm(c)
 
     if (area < 1e-12) {
-      throw new SingularMatrixError(`Degenerate triangle in stiffness assembly: area=${area}`)
+      throw new SingularError(`Degenerate triangle in stiffness assembly: area=${area}`)
     }
 
     const G = [subtract(v[2], v[1]), subtract(v[0], v[2]), subtract(v[1], v[0])]
@@ -103,7 +103,7 @@ export class LocalSolver {
         code: 'LOCAL_SOLVER_ILL_CONDITIONED',
         severity: 'warn',
         message:
-          `LocalSolver: matrix is ill-conditioned (norm=${normEst}). ` +
+          `Solver: matrix is ill-conditioned (norm=${normEst}). ` +
           'Results may be inaccurate.'
       })
     }
@@ -111,8 +111,8 @@ export class LocalSolver {
     try {
       return luSolve(A, rhs).slice(0, n)
     } catch (e) {
-      throw new SingularMatrixError(
-        `LocalSolver: constrained solve failed (${e.message}). ` +
+      throw new SingularError(
+        `Solver: constrained solve failed (${e.message}). ` +
           'Patch matrix may be singular or ill-conditioned.'
       )
     }
