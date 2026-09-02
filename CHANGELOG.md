@@ -15,6 +15,7 @@ All notable changes to this project will be documented in this file.
 ### Changed
 
 - Restructure README header with centered layout and aligned badges
+- Rename package and public class from `bcdtpp`/`Bcdtpp` to `traceprojector`/`TraceProjector`
 
 ## [0.0.7](https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/commit/e9b643c) — 2026-06-20
 
@@ -26,7 +27,7 @@ All notable changes to this project will be documented in this file.
 - Add BoundaryWeightComputer for trace-preserving projection weights
 - Implement Worsey-Farin split (§6.1.4) with idempotency
 - Implement Alfeld split (§6.1.3) with idempotency
-- Fix UMD global name to Bcdtpp in rollup config
+- Fix UMD global name to TraceProjector in rollup config
 - Fix linting issues across all source files
 
 ## [0.0.6](https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/commit/403d048) — 2026-05-12
@@ -59,7 +60,7 @@ All notable changes to this project will be documented in this file.
 
 ## [0.0.3](https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/commit/593e4d2) — 2026-05-05
 
-- Add Bcdtpp main class with project method dispatching to form degree l
+- Add TraceProjector main class with project method dispatching to form degree l
 - Add basic error classes: MeshValidationError, ProjectionError, SingularMatrixError
 - Implement first version of H1 projection
 - Add rollup UMD bundle configuration
