@@ -11,6 +11,11 @@ export interface EdgeWeight {
   eta: number[];
 }
 
+export interface FaceWeight {
+  pair: (u: (point: number[]) => number[]) => number;
+  nBasis: number;
+}
+
 export function vertexWeight(
   verts: number[][],
   faces: number[][],
@@ -22,3 +27,9 @@ export function edgeWeight(
   faces: number[][],
   ePair: number[],
 ): EdgeWeight;
+
+export function faceWeight(
+  verts: number[][],
+  faces: number[][],
+  fFace: number[],
+): FaceWeight;

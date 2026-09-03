@@ -1,5 +1,6 @@
 import { expect } from 'chai'
-import { vertexWeight, edgeWeight } from '../src/lib/bweight.js'
+import { vertexWeight, edgeWeight, faceWeight } from '../src/lib/bweight.js'
+import { triangleQuadrature, barycentricToCartesian } from '../src/lib/quadrature.js'
 
 // Closed boundary of a tetrahedron: 4 vertices, 4 faces (each area 0.5).
 const V = [
@@ -92,8 +93,85 @@ describe('Edge boundary weight zeta_{0,e}^1 (Section 6.3.2)', () => {
   })
 })
 
-// Lagrange P1 function at node idx on the closed tetra surface: the affine
-// function taking value 1 at V[idx] and 0 at the other three vertices.
+describe('Face boundary weight zeta_{0,f}^2 (Section 6.3.3)', () => {
+  // On a closed tetrahedron the extended star of any face is the whole surface.
+  const fFace = [0, 1, 2]
+  const weight = faceWeight(V, faces, fFace)
+  const q = triangleQuadrature(5)
+
+  // Independent lowest-order surface RT_0 basis on face (fi, edge e), with the
+  // featured-face outward normal moment d_k = int_f RT_k . n.
+  const facePhone = (fi) => {
+    const tv = faces[fi].map((i) => V[i])
+    const areaN = cross3(sub3(tv[1], tv[0]), sub3(tv[2], tv[0]))
+    const area = 0.5 * Math.sqrt(dot3(areaN, areaN))
+    const nrm = [areaN[0] / (2 * area), areaN[1] / (2 * area), areaN[2] / (2 * area)]
+    const eLen = [0, 1, 2].map((a) =>
+      Math.sqrt(dot3(sub3(tv[(a + 1) % 3], tv[a]), sub3(tv[(a + 1) % 3], tv[a]))))
+    const phi = (pt, e) => {
+      const po = tv[(e + 2) % 3]
+      const s = eLen[e] / (2 * area)
+      const v = [s * (pt[0] - po[0]), s * (pt[1] - po[1]), s * (pt[2] - po[2])]
+      const nn = v[0] * nrm[0] + v[1] * nrm[1] + v[2] * nrm[2]
+      return [v[0] - nn * nrm[0], v[1] - nn * nrm[1], v[2] - nn * nrm[2]]
+    }
+    return { tv, nrm, area, phi, eLen }
+  }
+
+  // Featured face index by (sorted) vertex triple.
+  const fif = faces.findIndex((fr) => sortKey(fr) === sortKey(fFace))
+  const feat = facePhone(fif)
+
+  it('pair(RT_k) = int_f RT_k . n (eq. 6.36) for every RT_0 basis field', () => {
+    for (let fi = 0; fi < faces.length; fi++) {
+      const ph = facePhone(fi)
+      for (let e = 0; e < 3; e++) {
+        const lhs = weight.pair((pt) => ph.phi(pt, e))
+        let dk = 0
+        if (fi === fif) {
+          for (let p = 0; p < q.bary.length; p++) {
+            const pt = barycentricToCartesian(feat.tv, q.bary[p])
+            dk += q.weights[p] * dot3(ph.phi(pt, e), feat.nrm) * feat.area
+          }
+        }
+        expect(lhs).to.be.closeTo(dk, 1e-6)
+      }
+    }
+  })
+
+  it('pair reproduces int_f u . n for an RT_0-trace field (eq. 6.36)', () => {
+    const coeffs = [0.4, -0.7, 1.1]
+    const u = (pt) => {
+      const acc = [0, 0, 0]
+      for (let e = 0; e < 3; e++) {
+        const rb = feat.phi(pt, e)
+        acc[0] += coeffs[e] * rb[0]
+        acc[1] += coeffs[e] * rb[1]
+        acc[2] += coeffs[e] * rb[2]
+      }
+      return acc
+    }
+    let rhs = 0
+    for (let p = 0; p < q.bary.length; p++) {
+      const pt = barycentricToCartesian(feat.tv, q.bary[p])
+      rhs += q.weights[p] * dot3(u(pt), feat.nrm) * feat.area
+    }
+    expect(weight.pair(u)).to.be.closeTo(rhs, 1e-6)
+  })
+})
+
+function cross3 (a, b) {
+  return [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+}
+function sub3 (a, b) {
+  return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+function dot3 (a, b) {
+  return a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+function sortKey (f) {
+  return [...f].sort((x, y) => x - y).join(':')
+}
 function pLinear (V, idx) {
   const A = V.map((v) => [1, v[0], v[1], v[2]])
   const b = V.map((_, k) => (k === idx ? 1 : 0))

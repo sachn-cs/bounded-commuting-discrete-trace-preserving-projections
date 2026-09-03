@@ -444,3 +444,148 @@ export function edgeWeight (verts, faces, ePair) {
 
   return { pair, edges, eta }
 }
+
+/**
+ * Lowest-order surface Raviart-Thomas (RT_0) basis on a single face.
+ *
+ * The three basis functions are affine tangential vector fields, one per edge,
+ * with a constant normal trace of unit flux on their own edge and vanishing
+ * normal flux on the other two (the standard 2D RT_0): for edge e with
+ * opposite vertex p_o, RT_e(x) = (|e| / (2 A)) (x - p_o), projected into the
+ * face's tangent plane.
+ *
+ * @param {!Object} fr - A face record {tv, grads, areaAbs, normal}.
+ * @return {!Array<function(number[]):!Array<number>>} The three RT_0 fields.
+ */
+function rt0Basis (fr) {
+  const A = fr.areaAbs // |f|
+  const eLen = [0, 1, 2].map((a) => norm(subtract(fr.tv[(a + 1) % 3], fr.tv[a])))
+  const normals = [0, 1, 2].map((a) => fr.normal) // planar face: unit normal shared
+  return [0, 1, 2].map((e) => {
+    const po = fr.tv[eRef(e)]
+    const scale = eLen[e] / (2 * A)
+    return (pt) => {
+      const v = [
+        scale * (pt[0] - po[0]),
+        scale * (pt[1] - po[1]),
+        scale * (pt[2] - po[2])
+      ]
+      // project onto the tangent plane of the face
+      const n = v[0] * normals[e][0] + v[1] * normals[e][1] + v[2] * normals[e][2]
+      return [v[0] - n * normals[e][0], v[1] - n * normals[e][1], v[2] - n * normals[e][2]]
+    }
+  })
+}
+
+// Vertex opposite edge e (for the RT_0 pivot): local index eRef = (e) maps
+// edge e -> the vertex not on edge e.
+function eRef (e) {
+  return (e + 2) % 3
+}
+
+/**
+ * Face boundary weight zeta_{0,f}^2 (Section 6.3.3), lowest-order RT_0.
+ *
+ * On the extended star of the featured face, assembles the lowest-order surface
+ * Raviart-Thomas trace basis, its mass matrix, and the face-DoF vector
+ *
+ *     d_k := int_f RT_k . n dA   (normal moment over the featured face),
+ *
+ * then forms eta_f^2 = M^{-1} d and exposes the duality functional
+ *
+ *     (zeta_{0,f}^2, u)_Gamma = (eta_f^2, u) = sum_k eta_k (RT_k, u)
+ *
+ * reproducing the face degree of freedom for H(div) traces in RT_0 (eq. 6.36):
+ *
+ *     (zeta_{0,f}^2, tr^2 u)_Gamma = int_f u . n.
+ *
+ * @param {!Array<!Array<number>>} verts
+ * @param {!Array<!Array<number>>} faces - Faces of the extended star incl. f.
+ * @param {!Array<number>} fFace - Featured face as a global index triple.
+ * @return {{pair:function(function(number[]):!Array<number>):number, nBasis:number}}
+ */
+export function faceWeight (verts, faces, fFace) {
+  if (fFace.length !== 3) throw new Error('faceWeight: fFace must be a face triple')
+  const q = triangleQuadrature(5)
+
+  const frs = faces.map((face) => {
+    const tv = face.map((i) => verts[i])
+    const grads = [0, 1, 2].map((i) => {
+      const c = [0, 0, 0]
+      c[i] = 1
+      return gradP1(tv, c)
+    })
+    const { area, normal } = triangleFrame(tv)
+    return { face, tv, grads, areaAbs: Math.abs(area), normal }
+  })
+
+  // Global RT_0 basis: nBasis = 3 * (#faces).  basisFace[f] -> [RT0, RT1, RT2].
+  const basisFace = frs.map((fr) => rt0Basis(fr))
+  const nBasis = frs.length * 3
+  const idOf = (fi, e) => fi * 3 + e
+
+  // Mass matrix M[I][J] = (RT_I, RT_J)_star.
+  const M = star2(nBasis)
+  for (let fi = 0; fi < frs.length; fi++) {
+    const fr = frs[fi]
+    for (let a = 0; a < 3; a++) {
+      for (let b = 0; b < 3; b++) {
+        const I = idOf(fi, a)
+        const J = idOf(fi, b)
+        let mint = 0
+        for (let p = 0; p < q.bary.length; p++) {
+          const pt = barycentricToCartesian(fr.tv, q.bary[p])
+          mint += q.weights[p] * dot(basisFace[fi][a](pt), basisFace[fi][b](pt))
+        }
+        M[I][J] += mint * fr.areaAbs
+      }
+    }
+  }
+
+  // Featured-face id and its outward unit normal.
+  const fkey = (f) => [...f].sort((x, y) => x - y).join(':')
+  const featured = fkey(fFace)
+  const fif = frs.findIndex((fr) => fkey(fr.face) === featured)
+  // Signed area-normal for the outward orientation of the featured face against
+  // its listing order.
+  const tvf = frs[fif].tv
+  const areaNormal = cross(subtract(tvf[1], tvf[0]), subtract(tvf[2], tvf[0]))
+  const outNormal = [areaNormal[0] / (2 * frs[fif].areaAbs), areaNormal[1] / (2 * frs[fif].areaAbs), areaNormal[2] / (2 * frs[fif].areaAbs)]
+
+  // d_k = int_f RT_k . n dA over the featured face only.
+  const d = new Array(nBasis).fill(0)
+  for (let e = 0; e < 3; e++) {
+    const I = idOf(fif, e)
+    let it = 0
+    for (let p = 0; p < q.bary.length; p++) {
+      const pt = barycentricToCartesian(frs[fif].tv, q.bary[p])
+      it += q.weights[p] * dot(basisFace[fif][e](pt), outNormal)
+    }
+    d[I] = it * frs[fif].areaAbs
+  }
+
+  // eta_f^2 = M^{-1} d.
+  const eta = luSolve(M.map((r) => r.slice()), d.slice())
+
+  // Duality functional: (zeta, u) = (eta, u) = sum_I eta_I (RT_I, u).
+  const pair = (u) => {
+    const fun = new Array(nBasis).fill(0)
+    for (let fi = 0; fi < frs.length; fi++) {
+      const fr = frs[fi]
+      for (let e = 0; e < 3; e++) {
+        const I = idOf(fi, e)
+        let it = 0
+        for (let p = 0; p < q.bary.length; p++) {
+          const pt = barycentricToCartesian(fr.tv, q.bary[p])
+          it += q.weights[p] * dot(basisFace[fi][e](pt), u(pt))
+        }
+        fun[I] += it * fr.areaAbs
+      }
+    }
+    let val = 0
+    for (let I = 0; I < nBasis; I++) val += eta[I] * fun[I]
+    return val
+  }
+
+  return { pair, nBasis }
+}
