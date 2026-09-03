@@ -2,197 +2,195 @@
   <h1 align="center">traceprojector</h1>
   <p align="center">Bounded, Commuting, Discrete-trace Preserving Projections for the 3D de Rham complex on simplicial meshes.</p>
   <p align="center">
-    <a href="#installation"><img src="https://img.shields.io/npm/v/traceprojector.svg" alt="npm version"></a>
+    <a href="#installation"><img src="https://img.shields.io/badge/node-%E2%89%A526.0.0-43853d" alt="Node 26+"></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License"></a>
-    <a href="https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/actions"><img src="https://img.shields.io/github/actions/workflow/status/sachncs/bounded-commuting-discrete-trace-preserving-projections/ci.yml?branch=master" alt="CI"></a>
+    <a href="https://github.com/sachncs/traceprojector/releases/latest"><img src="https://img.shields.io/github/v/release/sachncs/traceprojector" alt="Latest release"></a>
+    <a href="https://github.com/sachncs/traceprojector/actions"><img src="https://img.shields.io/github/actions/workflow/status/sachncs/traceprojector/ci.yml?branch=master" alt="CI"></a>
     <a href="https://www.npmjs.com/package/traceprojector"><img src="https://img.shields.io/npm/v/traceprojector" alt="npm"></a>
-    <a href="https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/stargazers"><img src="https://img.shields.io/github/stars/sachncs/bounded-commuting-discrete-trace-preserving-projections" alt="Stars"></a>
+    <a href="https://github.com/sachncs/traceprojector/stargazers"><img src="https://img.shields.io/github/stars/sachncs/traceprojector" alt="Stars"></a>
+    <a href="https://standardjs.com/"><img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg" alt="StandardJS"></a>
+    <a href="https://github.com/bcoe/c8"><img src="https://img.shields.io/badge/coverage-c8-yellow" alt="c8"></a>
   </p>
 </p>
 
-Based on the paper: [*Ern, Guzmán, Potu (2026) arXiv:2604.28103v1*](https://arxiv.org/abs/2604.28103).
+---
 
-> **Disclaimer:** I am not an author of the paper above. This repository is an independent JavaScript implementation of the algorithm described in that work.
+## What is this?
+
+**traceprojector** is a pure-JavaScript implementation of the
+**Bounded, Commuting, Discrete-trace Preserving Projections** `Π^l`
+for the discrete 3D de Rham complex. It builds, for `l = 0, 1, 2, 3`,
+the projection operators that
+
+> 1. are **bounded** in the natural `H^1`, `H(curl)`, `H(div)`, `L^2`
+>    norms,
+> 2. **commute** with the exterior derivative `d^l` (`grad Π^0 =
+>    Π^1 grad`, `curl Π^1 = Π^2 curl`, `div Π^2 = Π^3 div`),
+> 3. **preserve discrete traces** on the boundary: vertex values,
+>    edge tangential integrals, and face normal fluxes are reproduced
+>    exactly.
+
+It implements the construction from
+
+> *Ern, Guzmán, Potu (2026) — [arXiv:2604.28103v1](https://arxiv.org/abs/2604.28103).*
+
+> **Disclaimer:** I am not an author of the paper above. This
+> repository is an independent JavaScript implementation of the
+> algorithm described in that work.
 
 ---
 
-## Features
+## Who is this for?
 
-- **Pure JavaScript**: No external math dependencies; all linear algebra implemented natively.
-- **Simplicial Mesh Support**: 3D tetrahedral mesh processing with full topology (faces, edges, incidence).
-- **Geometric Splits**:
-  - **Alfeld Split**: Boundary face subdivision for local solvers.
-  - **Worsey-Farin Split**: Bulk tetrahedron subdivision for weight extensions.
-- **Full de Rham Complex (Lowest-Order)**:
-  - `l = 0` (`H^1`): Vertex-based projections using surface Poisson solvers.
-  - `l = 1` (`H(curl)`): Edge-based projections using edge Whitney forms.
-  - `l = 2` (`H(div)`): Face-based projections using face Whitney forms.
-  - `l = 3` (`L^2`): Cell-based projections via cell averages.
-- **Higher-Order Projections**: Scalar bubble basis support for `p >= 4` on `H^1`; L2 monomial basis for `p >= 1` on `l = 3`. Vector-valued higher-order (`l = 1, 2`, `p > 0`) is not yet implemented.
-- **Commuting Properties**: Designed to commute with exterior derivatives while preserving discrete traces.
-- **Fast Point Location**: AABB tree for `O(log N)` point-in-tetrahedron queries.
+You, even if:
+
+- You've never worked with finite elements before.
+- You don't know what the **de Rham complex** is — the
+  [Glossary](docs/math.md) explains every term in plain English.
+- You're a numerical-analysis researcher looking for a small,
+  dependency-free reference implementation of `Π^l`.
+- You teach an FEM course and want a live playground for your
+  students — the bundled [web playground](web/) has 3D mesh
+  visualisation, a convergence plot, and a code exporter.
+
+If you can install Node 26 and type commands into a terminal, you can
+use traceprojector.
+
+---
+
+## What can it do?
+
+- **Full 3D de Rham complex (lowest order)** — `Π^0` (vertex-based,
+  `H^1`), `Π^1` (edge-based, `H(curl)`), `Π^2` (face-based,
+  `H(div)`), `Π^3` (cell-based, `L^2`).
+- **Exact boundary DoFs** — the projector keeps `u(v)` at every
+  boundary vertex, `∫_e u·t ds` at every boundary edge, and
+  `∫_f u·n dA` at every boundary face, for arbitrary input `u`.
+- **Section 6.3 boundary-weight cascade** — vertex, edge, and face
+  duality functionals on the surface trace spaces
+  `P^1`, `N_0` (Whitney 1-form), `RT_0` (Raviart-Thomas), built from
+  the barycenter tent `μ` and the local mass matrix on each star.
+- **Mesh refinement** — Alfeld split (§6.1.3) for boundary faces and
+  Worsey-Farin split (§6.1.4) for bulk tets. Both are idempotent.
+- **Higher-order projection** — scalar bubble basis for `H^1` with
+  `p ≥ 4` and an L² monomial basis for `L^2` with `p ≥ 1`. (Vector-
+  valued higher-order on `H(curl)` / `H(div)` is not yet
+  implemented.)
+- **AABB point location** — `O(log N)` point-in-tet queries after
+  one-time tree build.
+- **Zero runtime dependencies** — the entire linear-algebra kernel
+  (LU solve, `3×3` inverse, barycentric gradients, surface operators)
+  is hand-rolled in pure JavaScript.
+
+---
+
+## Before you start
+
+You'll need **Node.js 26 or newer** installed on your computer.
+
+1. Open a terminal (on macOS: `Cmd + Space`, type "Terminal"; on
+   Windows: open "PowerShell"; on Linux: open your usual terminal).
+2. Type `node --version` and press Enter.
+3. If you see a version number starting with `26`, you're set.
+4. If you see "command not found" or an older version, install Node
+   26 via [fnm](https://github.com/Schniz/fnm),
+   [nvm](https://github.com/nvm-sh/nvm), or the
+   [official installer](https://nodejs.org/).
+
+You'll also need **git**. Same drill: `git --version`.
 
 ---
 
 ## Installation
 
-### From npm
+### Option 1 — From npm (easiest)
 
 ```bash
 npm install traceprojector
 ```
 
-### From source
+### Option 2 — Try it online (no install)
+
+The bundled [web playground](web/) is a Next.js 16 app that loads the
+library straight from this repo. Once you have the repo cloned (see
+Option 3), you can run it with:
 
 ```bash
-git clone https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections.git
-cd bounded-commuting-discrete-trace-preserving-projections
+npm run web:dev          # open http://localhost:3000
+```
+
+It gives you a 3D mesh viewer, an API playground with code export, and
+a live convergence plot.
+
+### Option 3 — From source (recommended for development)
+
+A workspace keeps the lib and the playground in one tree.
+
+```bash
+# 1. Download the code
+git clone https://github.com/sachncs/traceprojector.git
+cd traceprojector
+
+# 2. Install the lib and the web playground in one shot
 npm install
+
+# 3. Build the ESM / CJS / UMD bundles into dist/
+npm run build
 ```
+
+> 💡 The `web/` directory is an npm workspace. When you `import
+> { … } from 'traceprojector'` inside the playground, npm symlinks
+> it back to `src/traceprojector/` so you never have to rebuild the
+> lib to see your changes.
 
 ---
 
-## Quick Start
+## Your first run — Node.js
 
-### 1. Define a Mesh
-
-```javascript
-import { Mesh } from 'traceprojector'
-
-const mesh = new Mesh(vertices, tetrahedra)
-```
-
-### 2. Initialize Projections
+Open a Node 26 REPL (`node` in your terminal) and try this:
 
 ```javascript
-import { Whitney, Projector } from 'traceprojector'
+import { Mesh, Whitney, Projector, generateUnitCubeMesh } from 'traceprojector'
 
+// Build a 4×4×4 unit-cube tetrahedral mesh.
+const mesh = generateUnitCubeMesh(4)
 const whitney = new Whitney(mesh)
-const traceprojector = new Projector(mesh, whitney, { quadratureOrder: 3 })
 
-// Compute boundary weights (Alfeld splits + local solves)
-traceprojector.computeBoundaryWeights()
-traceprojector.buildLocator()
+// Build the projection operator. Pre-compute the boundary weights
+// and the AABB tree once; reuse the same projector for every query.
+const projector = new Projector(mesh, whitney, { quadratureOrder: 3 })
+projector.computeBoundaryWeights()
+projector.buildLocator()
+
+// Project the function u(x, y, z) = sin(x) cos(y) e^z at a point.
+const u = (p) => Math.sin(p[0]) * Math.cos(p[1]) * Math.exp(p[2])
+const value = projector.projectH1(u, [0.5, 0.5, 0.5], 0)
+console.log(value)
 ```
 
-### 3. Project a Function
+You'll see a number close to `sin(0.5) · cos(0.5) · e^0.5 ≈ 1.365`.
+
+**Higher-order.** Ask for a degree-`p` scalar enrichment:
 
 ```javascript
-const u = (p) => Math.sin(p[0])
-const val = traceprojector.projectH1(u, [0.5, 0.5, 0.5], 0)
+projector.projectHp(u, [0.5, 0.5, 0.5], 0, /* l */ 0, /* p */ 2)
 ```
 
-### 4. Higher-Order Projection
+**Project at any point** (AABB point location handled internally):
 
 ```javascript
-const val = traceprojector.projectHp(u, point, tetIdx, /* l */ 0, /* p */ 2)
+const { value, tIdx, bary } = projector.projectAtPoint(u, [0.1, 0.2, 0.3], 0)
+// { value, tIdx, bary: [λ₀, λ₁, λ₂, λ₃] }
 ```
 
-### 5. Point Location
-
-```javascript
-const result = traceprojector.projectAtPoint(u, [0.1, 0.2, 0.3], /* l */ 0, /* p */ 0)
-// result = { value, tIdx, bary }
-```
+The full walk-through with explanations of every line lives in
+[docs/math.md](docs/math.md).
 
 ---
 
-## Configuration
+## Your first run — the browser (UMD via CDN)
 
-| Setting | Constructor option | Default | Description |
-|---------|---------------------|---------|-------------|
-| Quadrature order | `quadratureOrder` | `3` | Gaussian quadrature order for local solvers |
-| Boundary split | `boundarySplit` | `"alfeld"` | `"alfeld"` or `"worsey-farin"` |
-| Refresh on change | `autoRefresh` | `false` | Recompute weights when mesh changes |
-| Verbose logging | `verbose` | `false` | Enable progress / diagnostic logging |
-| AABB tree leaf size | `aabbLeafSize` | `8` | Maximum tetrahedra per AABB leaf |
-
----
-
-## API
-
-| Symbol | Type | Description |
-|--------|------|-------------|
-| `Projector` | class | Main projection orchestrator |
-| `Mesh` | class | Tetrahedral mesh topology and geometry |
-| `Whitney` | class | Barycentric coordinates and Whitney basis |
-| `Locator` | class | AABB tree point-in-tet locator |
-| `quadrature` | module | Gaussian quadrature utilities |
-| `utils` | module | Linear algebra primitives |
-| `projectH1` | method | `Pi^0` (vertex-based) projection |
-| `projectHcurl` | method | `Pi^1` (edge-based) projection |
-| `projectHdiv` | method | `Pi^2` (face-based) projection |
-| `projectL2` | method | `Pi^3` (cell-based) projection |
-| `projectHp` | method | Higher-order scalar projection (`p >= 1`) |
-| `projectAtPoint` | method | Project at an arbitrary point with point location |
-
-All subpaths are exposed via the `exports` field in `package.json` and
-include hand-written `.d.ts` files.
-
----
-
-## Examples
-
-### Project a function on a unit cube mesh
-
-```javascript
-import { Mesh, Whitney, Projector } from 'traceprojector'
-
-const cube = unitCubeTetrahedralMesh(8, 8, 8)
-const mesh = new Mesh(cube.vertices, cube.tets)
-const whitney = new Whitney(mesh)
-const traceprojector = new Projector(mesh, whitney, { quadratureOrder: 3 })
-
-traceprojector.computeBoundaryWeights()
-traceprojector.buildLocator()
-
-const f = (p) => Math.sin(p[0]) * Math.cos(p[1]) * Math.exp(p[2])
-const val = traceprojector.projectH1(f, [0.25, 0.5, 0.5], 0)
-console.log(val)
-```
-
-### Inspect projection result
-
-```javascript
-const result = traceprojector.projectAtPoint(f, [0.5, 0.5, 0.5], 0, 0)
-console.log({
-  value: result.value,
-  tetIndex: result.tIdx,
-  barycentric: result.bary,
-})
-```
-
----
-
-## Error Handling
-
-The library throws specific error subclasses so callers can distinguish mesh problems from projection problems:
-
-- `MeshValidationError` — Invalid mesh data (degenerate tets, bad indices, non-finite vertices).
-- `ProjectionError` — Invalid arguments to projection methods or unsupported configurations.
-- `SingularMatrixError` — Numerical linear algebra failure (singular Jacobian, zero pivot).
-
-Recoverable boundary-weight failures emit warnings rather than throwing, so a single bad element does not halt the entire mesh projection. See [docs/exceptions.md](docs/exceptions.md) for the full taxonomy.
-
----
-
-## TypeScript
-
-Hand-written `.d.ts` declaration files are co-located with every source module in `src/lib/`. If your bundler does not resolve them automatically, reference the package in your `tsconfig.json`:
-
-```json
-{
-  "compilerOptions": {
-    "types": ["traceprojector"]
-  }
-}
-```
-
----
-
-## Browser Usage
-
-The UMD bundle is available via CDN:
+The UMD bundle is also available via jsDelivr / unpkg:
 
 ```html
 <script src="https://cdn.jsdelivr.net/npm/traceprojector/dist/traceprojector.umd.js"></script>
@@ -203,168 +201,205 @@ The UMD bundle is available via CDN:
 
 ---
 
-## Mathematical Background
+## Configuration
 
-This library implements the construction of boundary correction operators `Pi_partial^l`. The final projection is defined as:
+Pass an options object as the third argument to `new Projector(mesh, whitney, options)`:
+
+| Option | Default | Plain English |
+|---|---|---|
+| `quadratureOrder` | `3` | Gaussian quadrature order for the local stiffness solves. Higher = more accurate, slower. |
+| `boundarySplit` | `"alfeld"` | Either `"alfeld"` (face split) or `"worsey-farin"` (bulk-tet split). |
+| `onWarning` | `console.warn` | Callback for `BWC_*` / `HOP_*` warnings (singular mass, zero star area, …). |
+| `aabbLeafSize` | `8` | Maximum tetrahedra per AABB leaf node. Larger = fewer nodes, slower queries. |
+
+---
+
+## Where to go next
+
+For users:
+
+- **[API reference](docs/api.md)** — Auto-generated from JSDoc. The
+  full list of classes, methods, and exports. Bookmark this once you
+  start writing real code.
+- **[Mathematical background](docs/math.md)** — The 3D de Rham
+  complex, Whitney forms, the Section 6.3 boundary-weight cascade,
+  and mesh-refinement theory.
+- **[Architecture](docs/architecture.md)** — How the package is put
+  together, for the curious.
+- **[Error taxonomy](docs/exceptions.md)** — Every `ValidateError` /
+  `ProjectError` / `SingularError` and every `BWC_*` / `HOP_*`
+  warning code.
+
+For operators / maintainers:
+
+- **[Setup](docs/setup.md)** — Installing and using the lib in your
+  own project.
+- **[Testing](docs/testing.md)** — How tests are organised and how
+  to write new ones.
+- **[Development](docs/development.md)** — `npm run …` reference.
+- **[Publishing](docs/publishing.md)** — Versioning and release
+  process.
+
+---
+
+## API at a glance
+
+| Symbol | Type | Description |
+|---|---|---|
+| `Projector` | class | Main projection orchestrator (`Π^0..3`). |
+| `Mesh` | class | Tetrahedral mesh topology & geometry. |
+| `Whitney` | class | Barycentric coordinates & Whitney basis. |
+| `Locator` | class | AABB tree point-in-tet locator. |
+| `Refinement` | class | Alfeld / Worsey-Farin mesh splits. |
+| `Weight` | class | Section 6.3 boundary-weight cascade. |
+| `Bubble` | class | Higher-order scalar / L² enrichment. |
+| `Solver` | class | Surface-patch stiffness + constrained solves. |
+| `Surface` | class | `grad_Γ`, `curl_Γ`, `div_Γ`, `rot_Γ`, barycenter tent `μ`. |
+| `H1` / `Hcurl` / `Hdiv` / `L2` | classes | Per-form-degree projectors. |
+| `projectH1` / `projectHcurl` / `projectHdiv` / `projectL2` | methods | Lowest-order projections. |
+| `projectHp` | method | Higher-order scalar projection (`p ≥ 1`). |
+| `projectAtPoint` | method | Project at any point (point location handled internally). |
+| `computeBoundaryWeights` | method | Pre-compute the trace-preserving boundary weights. |
+| `buildLocator` | method | Build the AABB tree for `projectAtPoint`. |
+| `verifyBoundaryWeights` | method | Cross-check each boundary weight against its canonical DoF. |
+| `generateUnitCubeMesh` | function | Structured unit-cube tetrahedral mesh (dev/test). |
+| `quadrature` | module | Gaussian quadrature utilities. |
+| `utils` | module | Linear-algebra primitives (LU, `3×3` inverse, …). |
+
+All subpaths are exposed via the `exports` field in `package.json` and
+include hand-written `.d.ts` files in `src/traceprojector/`.
+
+---
+
+## Mathematical background
+
+The library implements boundary correction operators `Π_∂^l`. The
+final projection is:
 
 ```
-Pi^l = Pi_partial^l + Pi_ring^l (I - Pi_partial^l)
+Π^l = Π_∂^l + Π_ring^l (I − Π_∂^l)
 ```
 
-The novel contribution of the paper is the construction of `Pi_partial^l` using local problems on subdivided patches to ensure stability and trace-preservation.
+- `Π_∂^l` prescribes boundary data exactly and extends it into the
+  interior.
+- `Π_ring^l` is the interior projector with vanishing trace on the
+  boundary.
+- The novel contribution of the paper is the construction of `Π_∂^l`
+  using local problems on subdivided patches (Alfeld or
+  Worsey-Farin) to ensure stability and trace preservation.
 
-See [docs/math.md](docs/math.md) for the full mathematical exposition (de Rham complex, Whitney forms, commuting diagrams, and mesh refinement theory).
+The lowest-order trace-preserving boundary weights are constructed
+sequentially over the surface (`Weight` module):
+
+```
+ζ_{0,v}^0  →  ζ_{0,e}^1  →  ζ_{0,f}^2
+```
+
+Each weight lives in a staggered boundary trace space and is exposed
+as an L²-duality functional that reproduces the canonical degree of
+freedom (see [docs/math.md](docs/math.md) for the full exposition).
+
+---
+
+## Project structure
+
+```
+src/traceprojector/           — Library source (pure ESM, no runtime deps)
+  traceprojector.js           — Projector class (main API)
+  mesh.js, whitney.js, quadrature.js
+  utils.js, solver.js, locator.js, refinement.js
+  bweight.js, weight.js, surface.js, boundaryVerify.js
+  bubble.js, generator.js, harness.js, errors.js
+  projectors/
+    h1.js, hcurl.js, hdiv.js, l2.js
+
+tests/                         — Mocha + Chai test suites
+
+docs/                          — User & maintainer documentation
+  api.md (auto-generated)
+  math.md, architecture.md, exceptions.md
+  setup.md, testing.md, development.md, publishing.md
+
+web/                           — Next.js 16 + shadcn playground
+  (3D mesh viewer, API playground, convergence plot, code export)
+
+dist/                          — Rollup bundles: ESM, CJS, UMD
+```
 
 ---
 
 ## Performance
 
-- **Mesh construction**: `O(V + T)` where `V` is vertices and `T` is tetrahedra.
-- **Point location**: `O(log T)` per query after AABB tree construction.
-- **Boundary weight computation**: `O(V * k)` where `k` is the typical boundary-patch size; this is the dominant upfront cost.
-- **Per-element projection**: `O(1)` for lowest-order; `O(p^3)` for higher-order scalar enrichment.
+- **Mesh construction** — `O(V + T)` where `V` is the vertex count
+  and `T` the tet count.
+- **Point location** — `O(log T)` per query after one-time AABB
+  tree build.
+- **Boundary weight computation** — `O(V · k)` where `k` is the
+  typical boundary-patch size; this is the dominant upfront cost.
+- **Per-element projection** — `O(1)` for lowest order; `O(p³)` for
+  higher-order scalar enrichment.
 
 ---
 
-## Project Structure
-
-```
-src/
-  lib/
-    traceprojector.js                 — Main projection class (Projector)
-    mesh.js                   — Tetrahedral mesh topology & splits
-    whitney.js                — Whitney forms and barycentric utilities
-    quadrature.js             — Gaussian quadrature for triangles & tetrahedra
-    math_utils.js             — Pure JS linear algebra (LU, inverse, vector ops)
-    local_solver.js           — Boundary-patch stiffness assembly & solves
-    point_locator.js          — AABB tree point-in-tet locator
-    higher_order_projection.js — Bubble basis for p >= 1
-    boundary_weight_computer.js — Boundary weight computation
-    mesh_refinement.js        — Alfeld and Worsey-Farin mesh refinement
-    errors.js                 — Custom error classes
-    projectors/
-      h1_projector.js         — Pi^0 (vertex-based)
-      hcurl_projector.js      — Pi^1 (edge-based)
-      hdiv_projector.js       — Pi^2 (face-based)
-      l2_projector.js         — Pi^3 (cell-based)
-
-tests/
-  *.test.js                  — Mocha + Chai test suites
-
-docs/
-  api.md                     — Generated API reference
-  architecture.md            — Module map and data flow
-  math.md                    — Mathematical background
-  exceptions.md              — Error taxonomy and recovery
-  setup.md                   — Installation and usage
-  development.md             — Development workflow
-  testing.md                 — Testing philosophy and guide
-  publishing.md              — Versioning and release process
-```
-
----
-
-## Development
-
-```bash
-npm install                  # Install dev dependencies
-npm run lint                 # StandardJS style check
-npm run lint:fix             # Auto-fix StandardJS violations
-npm test                     # Run the full Mocha test suite
-npm run test:watch           # Run tests in watch mode
-npm run test:coverage        # Run tests with c8 coverage
-npm run build                # Build ESM, CJS, and UMD bundles
-npm run docs                 # Regenerate API docs from JSDoc
-```
-
-### Commit Conventions
-
-We use [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat: add Alfeld split boundary weight computation
-fix: clamp barycentric coordinates to [0,1]
-docs: regenerate API reference from JSDoc
-refactor: extract AABB tree to dedicated module
-test: add fixtures for Worsey-Farin splits
-chore: bump rollup to 4.x
-```
-
----
-
-## Testing
-
-```bash
-npm test                     # Mocha test suite
-npm run test:coverage        # With c8 coverage report
-```
-
----
-
-## Build
-
-```bash
-npm run build                # ESM + CJS + UMD bundles
-npm run build:full           # Build + regenerate API docs
-```
-
----
-
-## Release
-
-1. Bump version in `package.json`
-2. Update `CHANGELOG.md`
-3. Commit with a `version:X.Y.Z` message
-4. Tag and push — CI publishes to npm
-
----
-
-## Tech Stack
+## Tech stack
 
 | Category | Technology |
-|----------|------------|
-| Language | JavaScript (ES2022) |
+|---|---|
+| Language | JavaScript (ES2024, pure ESM) |
+| Runtime | Node.js ≥ 26 |
 | Build | [Rollup](https://rollupjs.org/) (ESM + CJS + UMD) |
 | Lint | [StandardJS](https://standardjs.com/) |
 | Testing | [Mocha](https://mochajs.org/) + [Chai](https://www.chaijs.com/) |
 | Coverage | [c8](https://github.com/bcoe/c8) |
+| Docs | [jsdoc-to-markdown](https://github.com/jsdoc2md/jsdoc-to-markdown) |
+| Playground | [Next.js 16](https://nextjs.org/) + [shadcn/ui](https://ui.shadcn.com/) + [three.js](https://threejs.org/) |
 | CI | [GitHub Actions](https://github.com/features/actions) |
 
 ---
 
 ## Roadmap
 
-### High Priority
+### High priority
 
-- **Vector-valued higher-order projections** (`l = 1, 2`, `p > 0`): Nédélec and Raviart-Thomas enrichment for `H(curl)` and `H(div)`.
-- **Adaptive mesh refinement support**: Integrate `Refinement` APIs into `Projector` so boundary weights can be recomputed incrementally as the mesh refines.
+- **Vector-valued higher-order projections** (`l = 1, 2`, `p > 0`) —
+  Nédélec and Raviart-Thomas enrichment for `H(curl)` and `H(div)`.
+- **Adaptive mesh refinement support** — integrate `Refinement` APIs
+  into `Projector` so boundary weights can be recomputed
+  incrementally as the mesh refines.
 
-### Medium Priority
+### Medium priority
 
-- **Web Worker parallelization**: Offload per-tet projection and boundary weight solves to workers for large meshes.
-- **WASM acceleration**: Port the dense linear algebra routines (`luSolve`, `inverse3x3`) to WebAssembly for a 2-5x speedup.
+- **Web Worker parallelization** — offload per-tet projection and
+  boundary weight solves to workers for large meshes.
+- **WASM acceleration** — port the dense linear-algebra routines
+  (`luSolve`, `inverse3x3`) to WebAssembly for a 2-5× speedup.
 
-### Low Priority / Research
+### Low priority / Research
 
-- **Anisotropic mesh support**: Generalize the point locator and quadrature to handle highly stretched tets without loss of precision.
-- **Time-dependent projections**: Cache-friendly APIs for projecting fields that evolve between time steps.
-- **Arbitrary polynomial degree `p`**: Unify the scalar bubble and L2 monomial bases into a single hierarchical basis generator.
+- **Anisotropic mesh support** — generalize the point locator and
+  quadrature to handle highly stretched tets without loss of
+  precision.
+- **Time-dependent projections** — cache-friendly APIs for projecting
+  fields that evolve between time steps.
+- **Arbitrary polynomial degree `p`** — unify the scalar bubble and
+  L² monomial bases into a single hierarchical basis generator.
 
 ---
 
 ## Contributing
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code
-of conduct and the process for submitting pull requests.
+Want to improve traceprojector? See [CONTRIBUTING.md](CONTRIBUTING.md)
+for how to set up a development environment and submit changes.
 
 ## Code of Conduct
 
-This project follows the [Contributor Covenant v2.1](CODE_OF_CONDUCT.md).
-By participating you agree to abide by its terms.
+We expect everyone to follow our
+[Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Security
 
-Report vulnerabilities to **sachncs@gmail.com** — see [SECURITY.md](SECURITY.md).
+Found a security issue? See [SECURITY.md](SECURITY.md) — please don't
+open a public GitHub issue for security problems.
 
 ## License
 

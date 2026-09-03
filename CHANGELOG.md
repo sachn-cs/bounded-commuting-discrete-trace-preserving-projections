@@ -6,6 +6,77 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Add a new `web/` workspace: a Next.js 16 + shadcn/ui playground that
+  consumes the lib via npm workspaces, with a 3D tetrahedral-mesh
+  viewer (three.js / @react-three/fiber), an API playground with
+  copy-to-clipboard code export, and a live convergence plot
+  (Recharts). Start it with `npm run web:dev`; build with
+  `npm run web:build`. A new `web` job in `.github/workflows/ci.yml`
+  builds the playground on every push.
+- Add a "Try it online" link from the root `README.md` to the
+  playground, alongside a convexfolio-style "Before you start /
+  Installation / Your first run / Configuration / Where to go next"
+  skeleton that keeps the existing API, math, architecture,
+  performance, and tech-stack sections as a second half.
+- Add a top-level `engines.node: ">=26.0.0"` and a `workspaces:
+  ["web"]` field to `package.json`. New convenience scripts
+  `web:dev`, `web:build`, and `web:start` proxy into the workspace.
+- Add `next-env.d.ts`, `.next/`, `out/`, and `.turbo/` to
+  `.gitignore` for the `web/` workspace.
+- Add a `web/build` job to the CI workflow that compiles the
+  Next.js playground alongside the Node test job.
+
+### Changed (BREAKING)
+
+- **Move source tree from `src/lib/` to `src/traceprojector/`.** The
+  package now ships as `import { … } from 'traceprojector'` with the
+  source living in `src/traceprojector/`. `package.json`
+  (`main`, `module`, `unpkg`, `jsdelivr`, every `exports.*`, `types`,
+  `files`), the `docs` script glob, the rollup `input`, the
+  `architecture.md` module map, the `math.md` cross-references, the
+  `setup.md` / `testing.md` / `development.md` examples, and every
+  `tests/*.test.js` import are updated. The directory layout inside
+  is preserved, so internal relative imports (`./utils.js`,
+  `../projectors/h1.js`) still resolve.
+- **Drop Babel from the build pipeline.** `@babel/core`,
+  `@babel/preset-env`, `@rollup/plugin-babel`, and `babel.config.json`
+  are removed: the project is pure ESM and only ever runs on Node
+  26+, so the Babel pass was a no-op.
+- **Pin to Node 26.** The CI matrix is reduced from `[20, 22]` to a
+  single `[26]` job, and the `publish.yml` workflow is updated
+  accordingly. `docs/setup.md` requirements bumped to Node 26,
+  npm 11.
+- **Repository URL** updated to `https://github.com/sachncs/traceprojector`
+  in `package.json` (`homepage`, `repository.url`, `bugs.url`), every
+  README badge, the CI workflow URLs (implicit), and `docs/setup.md`
+  install instructions. The historical commit links in the changelog
+  still point at the original `bounded-commuting-…` repo because
+  they reference real past commits.
+- **Error class names** in docs: `MeshValidationError` → `ValidateError`,
+  `ProjectionError` → `ProjectError`, `SingularMatrixError` →
+  `SingularError` (the class names in source were already renamed in
+  the previous Unreleased entry; this just brings the docs in line).
+- **README, CONTRIBUTING, SECURITY** rewritten to use the public class
+  name `Projector` and the package name `traceprojector` (no more
+  `TraceProjector` / `Bcdtpp`).
+
+### Changed
+
+- Bump dev-dependency group to current latest:
+  - `@rollup/plugin-node-resolve` `^16.0.1` → `^16.0.3`
+  - `jsdoc-to-markdown` `^9.1.1` → `^9.1.3`
+  - `mocha` `^11.8.0` → `^12.0.0`
+  - The rest of the dev deps (`@rollup/plugin-commonjs`,
+    `@rollup/plugin-terser`, `rollup`, `c8`, `chai`, `sinon`,
+    `standard`) were already at latest.
+- Bump GitHub Actions: `actions/checkout` and `actions/setup-node`
+  to `v8`.
+- Tighten the StandardJS `ignore` list to also skip `web/` (the
+  playground is type-checked with `tsc` and linted with `next lint`
+  rather than StandardJS).
+
+### Added (prior entries)
+
 - Add `Projector.verifyBoundaryWeights` (Option 1 of the Section 6.3 cascade as a checked cross-check, per the "verify, don't replace" decision): the exact boundary DoFs stay `u(v)`, `∫_e u·t`, `∫_f u·n` for any input, and each wired §6.3 weight functional is applied to its boundary simplex's canonical discrete trace basis field (P1 hat `λ_v`, Whitney 1-form `W_e`, face `RT_0`) to confirm it recovers the normalized DoF — see `src/lib/boundaryVerify.js` and `tests/weight.test.js`
 - Fix `Weight` vertex-weight assembly after an Alfeld/Worsey-Farin split: the mesh appends barycenter vertices, so `bweight.vertexWeight` now receives a compact, remapped local vertex set for each boundary star (the previous full-vertex pass produced a singular stiffness matrix after the split and silently skipped every vertex weight)
 - Add Tech Stack section to README
