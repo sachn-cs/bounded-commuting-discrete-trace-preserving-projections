@@ -28,6 +28,7 @@ All notable changes to this project will be documented in this file.
 - Add the face boundary weight `ζ_{0,f}^2` (Section 6.3.3) on the lowest-order surface `RT_0` (Raviart-Thomas) space: assemble the RT_0 mass matrix over the extended star, solve for `η_f^2 = M^{-1}d` from the featured-face normal moments `d_k = ∫_f RT_k·n`, and expose its duality functional `(ζ, u) = (η_f^2, u)` reproducing the face degree of freedom for H(div) traces in `RT_0` (eq. 6.36)
 - Regenerate `docs/api.md` (via `npm run docs`) to include the `bweight` and `surface` exports, and document the Section 6.3 boundary-weight cascade in `docs/math.md`
 - Wire the Section 6.3 vertex/edge/face duality functionals into `Weight.compute()`: add `vertexBoundaryWeights`, `edgeBoundaryWeights`, and `faceBoundaryWeights` (built from `bweight.vertexWeight`/`edgeWeight`/`faceWeight` over each boundary vertex's star, edge's star, and face's extended star), and store them on `Projector` via `computeBoundaryWeights`
+- Remove the obsolete `Weight.computeVertexWeights` Solver/`nodeMap` route and the now-dead `vertexBoundaryData`/`Projector.vertexData` (the H1 boundary DoF is exact `u(v)`), drop the unused `meshRefinement` constructor argument from `Weight`, and drop the now-dead `Weight fault isolation` coverage tests
 
 ### Changed (naming conventions)
 

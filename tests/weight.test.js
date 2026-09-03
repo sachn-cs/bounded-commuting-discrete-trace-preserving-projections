@@ -25,7 +25,7 @@ describe('Weight Section 6.3 boundary-weight cascade', () => {
 
   before(() => {
     const mesh = new Mesh(vertices, tetrahedra)
-    const weight = new Weight(mesh, { alfeldTriangles: [] }, () => {})
+    const weight = new Weight(mesh, () => {})
     result = weight.compute()
   })
 

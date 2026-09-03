@@ -1,8 +1,7 @@
 /**
  * Broad coverage and edge-case tests: multi-tet projection correctness,
  * mesh validation errors, higher-order edge cases, singular-matrix handling,
- * Weight fault isolation, and scalar-to-vector projection
- * interoperability.
+ * and scalar-to-vector projection interoperability.
  */
 import { expect } from 'chai'
 import sinon from 'sinon'
@@ -10,8 +9,6 @@ import { Mesh } from '../src/lib/mesh.js'
 import { Whitney } from '../src/lib/whitney.js'
 import { Projector } from '../src/lib/traceprojector.js'
 import { Bubble } from '../src/lib/bubble.js'
-import { Weight } from '../src/lib/weight.js'
-import { Refinement } from '../src/lib/refinement.js'
 import { ValidateError } from '../src/lib/errors.js'
 import { factorial, dot } from '../src/lib/utils.js'
 import { generateUnitCubeMesh } from '../src/lib/generator.js'
@@ -378,53 +375,6 @@ describe('Bubble Projection', () => {
     }
     expect(warnSpy.called).to.equal(true)
     mesh.getVolume = origGetVolume
-  })
-})
-
-// Verifies that Weight isolates per-vertex failures:
-// zero star area and adjacency exceptions emit warnings instead of throwing.
-describe('Weight fault isolation', () => {
-  afterEach(() => sinon.restore())
-
-  it('warns and skips vertex with zero star area', () => {
-    const warnSpy = sinon.spy()
-    const mesh = new Mesh(
-      [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
-      [[0, 1, 2, 3]]
-    )
-    const refinement = new Refinement(mesh)
-    refinement.computeWorseyFarinSplit()
-    // Force all face areas to zero so starArea falls below the threshold.
-    const origGetFaceArea = mesh.getFaceArea.bind(mesh)
-    mesh.getFaceArea = (fIdx) => 0
-    const bwc = new Weight(mesh, refinement, warnSpy)
-    bwc.compute()
-    expect(warnSpy.called).to.equal(true)
-    expect(warnSpy.getCall(0).args[0].code).to.equal('BWC_ZERO_STAR_AREA')
-    expect(warnSpy.getCall(0).args[0].message).to.match(/star area/)
-    // Restore for downstream tests.
-    mesh.getFaceArea = origGetFaceArea
-  })
-
-  it('catches per-vertex solver failures and warns', () => {
-    const warnSpy = sinon.spy()
-    const mesh = new Mesh(
-      [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],
-      [[0, 1, 2, 3]]
-    )
-    const refinement = new Refinement(mesh)
-    refinement.computeWorseyFarinSplit()
-    const bwc = new Weight(mesh, refinement, warnSpy)
-    // Inject a fault by temporarily corrupting the mesh adjacency.
-    const orig = mesh.getBoundaryStar
-    mesh.getBoundaryStar = (vIdx) => {
-      throw new Error('simulated adjacency failure')
-    }
-    expect(() => bwc.compute()).to.not.throw()
-    expect(warnSpy.called).to.equal(true)
-    expect(warnSpy.getCall(0).args[0].code).to.equal('BWC_VERTEX_FAILURE')
-    expect(warnSpy.getCall(0).args[0].message).to.match(/failed to compute weights/)
-    mesh.getBoundaryStar = orig
   })
 })
 

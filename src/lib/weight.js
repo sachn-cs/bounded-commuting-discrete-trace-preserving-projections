@@ -5,29 +5,27 @@
  * used by trace-preserving boundary DoFs.
  */
 
-import { subtract, norm, triangleArea } from './utils.js'
-import { Solver } from './solver.js'
+import { subtract, norm } from './utils.js'
 import { vertexWeight, edgeWeight, faceWeight } from './bweight.js'
 
 /**
  * Computes boundary patch weights used by the trace-preserving projection
- * operators.  For each boundary vertex, it assembles a surface-patch stiffness
- * matrix on the Alfeld-split star, solves a constrained Laplace problem to
- * obtain the weight functions psi, and collects edge tangents and face normals.
+ * operators.  For each boundary vertex it builds the Section 6.3 vertex
+ * duality functional, and for each boundary edge/face it builds the edge/face
+ * duality functionals, plus the edge tangent/length and face normal/area
+ * geometry.
  *
- * Local failures (e.g. degenerate patches) emit warnings rather than throwing
+ * Local failures (e.g. degenerate stars) emit warnings rather than throwing
  * so that a single bad element does not halt the entire mesh projection.
  */
 export class Weight {
   /**
    * @param {!Mesh} mesh
-   * @param {!Refinement} meshRefinement
    * @param {function=} onWarning - Callback invoked with a warning context
    *   object when a local weight computation fails or is ill-conditioned.
    */
-  constructor (mesh, meshRefinement, onWarning = console.warn) {
+  constructor (mesh, onWarning = console.warn) {
     this.mesh = mesh
-    this.meshRefinement = meshRefinement
     this.onWarning =
       typeof onWarning === 'function'
         ? onWarning
@@ -38,7 +36,6 @@ export class Weight {
    * Computes all boundary weights, including the Section 6.3 vertex/edge/face
    * duality functionals.
    * @return {Object} Boundary weight and geometry data.
-   * @property {!Map<number, {nodeMap: !Array<number>, invNodeMap: !Map<number, number>, psi: !Array<number>}>} vertexBoundaryData
    * @property {!Map<number, {v0: number, v1: number, tangent: !Array<number>, length: number}>} edgeBoundaryData
    * @property {!Map<number, {normal: !Array<number>, area: number}>} faceBoundaryData
    * @property {!Map<number, {pair: function, integral: number, psi: !Array<number>, faces: !Array<!Array<number>>}>} vertexBoundaryWeights
@@ -46,14 +43,12 @@ export class Weight {
    * @property {!Map<number, {face: !Array<number>, pair: function, nBasis: number}>} faceBoundaryWeights
    */
   compute () {
-    const vertexBoundaryData = this.computeVertexWeights()
     const edgeBoundaryData = this.computeEdgeData()
     const faceBoundaryData = this.computeFaceData()
-    const vertexBoundaryWeights = this.computeVertexWeightsBweight()
+    const vertexBoundaryWeights = this.computeVertexWeights()
     const edgeBoundaryWeights = this.computeEdgeWeights()
     const faceBoundaryWeights = this.computeFaceWeights()
     return {
-      vertexBoundaryData,
       edgeBoundaryData,
       faceBoundaryData,
       vertexBoundaryWeights,
@@ -63,7 +58,7 @@ export class Weight {
   }
 
   /** @private */
-  computeVertexWeightsBweight () {
+  computeVertexWeights () {
     const zeta0 = new Map()
     const faces = this.mesh.getFaces()
     const boundaryFaces = this.mesh.getBoundaryFaces()
@@ -89,69 +84,6 @@ export class Weight {
       }
     }
     return zeta0
-  }
-
-  /** @private */
-  computeVertexWeights () {
-    const zeta0Vertex = new Map()
-    for (const vIdx of this.mesh.boundaryNodes) {
-      try {
-        const starFaces = this.mesh.getBoundaryStar(vIdx)
-        const alfeldTris = this.meshRefinement.alfeldTriangles.filter((at) =>
-          starFaces.includes(at.parentFaceIdx)
-        )
-
-        const triangles = alfeldTris.flatMap((at) => at.triangles)
-        const starNodes = new Set(triangles.flat())
-        const nodeMap = Array.from(starNodes)
-        const invNodeMap = new Map(nodeMap.map((id, i) => [id, i]))
-
-        const localTris = triangles.map((t) => t.map((v) => invNodeMap.get(v)))
-        const localVerts = nodeMap.map((v) => this.mesh.vertices[v])
-
-        const K = Solver.assembleSurfaceStiffness(localVerts, localTris)
-        const b = new Array(nodeMap.length).fill(0)
-
-        const starArea = starFaces.reduce(
-          (acc, fIdx) => acc + this.mesh.getFaceArea(fIdx),
-          0
-        )
-        if (starArea < 1e-12) {
-          this.onWarning({
-            code: 'BWC_ZERO_STAR_AREA',
-            severity: 'warn',
-            message:
-              `Weight: vertex ${vIdx} has zero or ` +
-              `near-zero star area (${starArea}). Skipping weight computation.`
-          })
-          continue
-        }
-        const eta = 1.0 / starArea
-
-        localTris.forEach((tri) => {
-          const area = triangleArea(
-            localVerts[tri[0]],
-            localVerts[tri[1]],
-            localVerts[tri[2]]
-          )
-          tri.forEach((nodeIdx) => {
-            b[nodeIdx] += eta * (area / 3.0)
-          })
-        })
-
-        const psi = Solver.solveWithConstraint(K, b, this.onWarning)
-        zeta0Vertex.set(vIdx, { nodeMap, invNodeMap, psi })
-      } catch (e) {
-        this.onWarning({
-          code: 'BWC_VERTEX_FAILURE',
-          severity: 'warn',
-          message:
-            'Weight: failed to compute weights for ' +
-            `vertex ${vIdx}: ${e.message}`
-        })
-      }
-    }
-    return zeta0Vertex
   }
 
   /** @private */

@@ -54,8 +54,6 @@ export class Projector {
   hdiv
   /** @type {!L2} */
   l2
-  /** @type {!Map<number, {nodeMap: !Array<number>, psi: !Array<number>}>} */
-  vertexData
   /** @type {!Map<number, {pair: function, integral: number, psi: !Array<number>}>} */
   vertexBoundaryWeights
   /** @type {!Map<number, {ePair: !Array<number>, pair: function, eta: !Array<number>}>} */
@@ -79,13 +77,11 @@ export class Projector {
     this.order = options.quadratureOrder || 3
     this.onWarning =
       options.onWarning || ((ctx) => console.warn(ctx.message ?? ctx))
-    this.vertexData = new Map()
     this.locator = null
 
     this.refinement = new Refinement(this.mesh)
     this.weight = new Weight(
       this.mesh,
-      this.refinement,
       this.onWarning
     )
 
@@ -178,7 +174,6 @@ export class Projector {
       this.refinement.computeWorseyFarinSplit()
     }
     const weights = this.weight.compute()
-    this.vertexData = weights.vertexBoundaryData
     this.vertexBoundaryWeights = weights.vertexBoundaryWeights
     this.edgeBoundaryWeights = weights.edgeBoundaryWeights
     this.faceBoundaryWeights = weights.faceBoundaryWeights
@@ -374,7 +369,7 @@ projectH1 (u, point, tIdx) {
     const result = new Map()
     if (l === 0) {
       for (const vIdx of this.mesh.getBoundaryNodes()) {
-        result.set(vIdx, this.h1.computeBoundaryIntegralH1(vIdx, u, this.vertexData))
+        result.set(vIdx, this.h1.computeBoundaryIntegralH1(vIdx, u))
       }
     } else if (l === 1) {
       for (const eIdx of this.mesh.getBoundaryEdges()) {

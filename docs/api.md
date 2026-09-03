@@ -59,10 +59,11 @@ the new class implements the same getter interface.</p>
 </dd>
 <dt><a href="#Weight">Weight</a></dt>
 <dd><p>Computes boundary patch weights used by the trace-preserving projection
-operators.  For each boundary vertex, it assembles a surface-patch stiffness
-matrix on the Alfeld-split star, solves a constrained Laplace problem to
-obtain the weight functions psi, and collects edge tangents and face normals.</p>
-<p>Local failures (e.g. degenerate patches) emit warnings rather than throwing
+operators.  For each boundary vertex it builds the Section 6.3 vertex
+duality functional, and for each boundary edge/face it builds the edge/face
+duality functionals, plus the edge tangent/length and face normal/area
+geometry.</p>
+<p>Local failures (e.g. degenerate stars) emit warnings rather than throwing
 so that a single bad element does not halt the entire mesh projection.</p>
 </dd>
 <dt><a href="#Whitney">Whitney</a></dt>
