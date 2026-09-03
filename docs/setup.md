@@ -2,8 +2,8 @@
 
 ## Requirements
 
-- Node.js >= 20
-- npm >= 10
+- Node.js >= 26
+- npm >= 11
 
 ## Installation
 
@@ -16,8 +16,8 @@ npm install traceprojector
 ### From source
 
 ```bash
-git clone https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections.git
-cd bounded-commuting-discrete-trace-preserving-projections
+git clone https://github.com/sachncs/traceprojector.git
+cd traceprojector
 npm install
 ```
 
@@ -52,10 +52,10 @@ const { Mesh, Whitney, Projector } = require('traceprojector')
 ```html
 <script src="https://cdn.jsdelivr.net/npm/traceprojector/dist/traceprojector.umd.js"></script>
 <script>
-  const { Mesh, Whitney, Projector } = window.Projector;
+  const { Mesh, Whitney, Projector } = window.TraceProjector;
 </script>
 ```
 
 ## TypeScript
 
-Hand-written `.d.ts` files are included in `src/lib/`. If your bundler does not resolve them automatically, add the package to your `tsconfig.json` `types` array or reference the declaration files directly.
+Hand-written `.d.ts` files are included in `src/traceprojector/`. If your bundler does not resolve them automatically, add the package to your `tsconfig.json` `types` array or reference the declaration files directly.

@@ -15,6 +15,12 @@ dist-ssr
 coverage
 .nyc_output
 
+# Next.js (web/ workspace)
+.next/
+out/
+next-env.d.ts
+.turbo/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

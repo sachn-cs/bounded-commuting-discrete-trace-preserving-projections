@@ -2,9 +2,9 @@
 
 This library uses a small hierarchy of custom error classes to provide actionable diagnostics.
 
-## MeshValidationError
+## ValidateError
 
-Thrown by `Mesh` when input data is geometrically or topologically invalid.
+Thrown by `Mesh` (and mesh generators) when input data is geometrically or topologically invalid.
 
 | Condition | Message pattern |
 |-----------|-----------------|
@@ -17,7 +17,7 @@ Thrown by `Mesh` when input data is geometrically or topologically invalid.
 
 **Recovery**: Fix the input mesh data and re-instantiate `Mesh`.
 
-## ProjectionError
+## ProjectError
 
 Thrown by `Projector` and projector classes when arguments are invalid or operations cannot proceed.
 
@@ -31,9 +31,9 @@ Thrown by `Projector` and projector classes when arguments are invalid or operat
 
 **Recovery**: Validate inputs before calling projection methods; ensure the point locator is built for global queries.
 
-## SingularMatrixError
+## SingularError
 
-Thrown by linear algebra routines in `math_utils.js` when a matrix is singular or numerically rank-deficient.
+Thrown by linear algebra routines in `utils.js` when a matrix is singular or numerically rank-deficient.
 
 | Condition | Message pattern |
 |-----------|-----------------|

@@ -22,8 +22,8 @@ import {
   tetVolume,
   factorial,
   numericalGradient
-} from '../src/lib/utils.js'
-import { SingularError } from '../src/lib/errors.js'
+} from '../src/traceprojector/utils.js'
+import { SingularError } from '../src/traceprojector/errors.js'
 
 describe('Math Utils', () => {
   it('dot product is correct', () => {

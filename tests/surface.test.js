@@ -14,9 +14,9 @@ import {
   divGamma,
   muTent,
   triangleFrame
-} from '../src/lib/surface.js'
-import { triangleQuadrature, barycentricToCartesian } from '../src/lib/quadrature.js'
-import { dot, cross } from '../src/lib/utils.js'
+} from '../src/traceprojector/surface.js'
+import { triangleQuadrature, barycentricToCartesian } from '../src/traceprojector/quadrature.js'
+import { dot, cross } from '../src/traceprojector/utils.js'
 
 const FRAMES = [
   { v0: [0, 0, 0], v1: [1, 0, 0], v2: [0, 1, 0], label: 'z=0' },

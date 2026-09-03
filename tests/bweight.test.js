@@ -1,6 +1,6 @@
 import { expect } from 'chai'
-import { vertexWeight, edgeWeight, faceWeight } from '../src/lib/bweight.js'
-import { triangleQuadrature, barycentricToCartesian } from '../src/lib/quadrature.js'
+import { vertexWeight, edgeWeight, faceWeight } from '../src/traceprojector/bweight.js'
+import { triangleQuadrature, barycentricToCartesian } from '../src/traceprojector/quadrature.js'
 
 // Closed boundary of a tetrahedron: 4 vertices, 4 faces (each area 0.5).
 const V = [

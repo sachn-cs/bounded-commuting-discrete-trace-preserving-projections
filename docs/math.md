@@ -80,7 +80,7 @@ The projectors keep the exact boundary DoFs (`u(v)`, `int_e u . t_e`,
 `int_f u . n_f`) for arbitrary inputs, and the weights above are wired in as a
 checked cross-check: `Projector.verifyBoundaryWeights()` applies each weight
 functional to its boundary simplex's canonical discrete trace basis field and
-verifies it recovers the normalized DoF (see `src/lib/boundaryVerify.js`).
+verifies it recovers the normalized DoF (see `src/traceprojector/boundaryVerify.js`).
 
 The supporting surface differential operators (`grad_Gamma`, `rot_Gamma`,
 `curl_Gamma`, `div_Gamma`, eqs. 2.10/2.14a/2.14b) and the tent `mu` are provided

@@ -10,7 +10,7 @@ import {
   integrateTetrahedron,
   barycentricToCartesian,
   lineQuadrature
-} from '../src/lib/quadrature.js'
+} from '../src/traceprojector/quadrature.js'
 
 // Verifies exactness of Gaussian quadrature at each supported order.
 // Tolerance 1e-10 is used for exact analytical values (machine epsilon

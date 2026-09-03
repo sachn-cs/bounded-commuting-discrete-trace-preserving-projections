@@ -3,12 +3,12 @@
  * rate tests for all four de Rham projection operators (H1, Hcurl, Hdiv, L2).
  */
 import { expect } from 'chai'
-import { Whitney } from '../src/lib/whitney.js'
-import { Projector } from '../src/lib/traceprojector.js'
+import { Whitney } from '../src/traceprojector/whitney.js'
+import { Projector } from '../src/traceprojector/traceprojector.js'
 import {
   generateUnitCubeMesh,
   generateSingleTetMesh
-} from '../src/lib/generator.js'
+} from '../src/traceprojector/generator.js'
 import {
   computeL2ErrorScalar,
   computeL2ErrorVector,
@@ -16,7 +16,7 @@ import {
   estimateMeshSize,
   computeRate,
   runConvergenceStudy
-} from '../src/lib/harness.js'
+} from '../src/traceprojector/harness.js'
 
 // Verifies the mesh generator produces valid tetrahedral meshes
 // with correct counts for various subdivision levels.

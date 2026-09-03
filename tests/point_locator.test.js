@@ -4,10 +4,10 @@
  * tet rejection at construction time.
  */
 import { expect } from 'chai'
-import { Locator } from '../src/lib/locator.js'
-import { Mesh } from '../src/lib/mesh.js'
-import { ValidateError } from '../src/lib/errors.js'
-import { generateUnitCubeMesh } from '../src/lib/generator.js'
+import { Locator } from '../src/traceprojector/locator.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
+import { ValidateError } from '../src/traceprojector/errors.js'
+import { generateUnitCubeMesh } from '../src/traceprojector/generator.js'
 
 // Tests the AABB tree point-in-tet locator on single-tet, two-tet,
 // and multi-tet (cube) meshes, plus tree partitioning behavior.

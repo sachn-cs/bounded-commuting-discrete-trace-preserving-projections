@@ -3,14 +3,14 @@
   "version": "0.1.0",
   "description": "Bounded, Commuting, Discrete-trace Preserving Projections for the 3D de Rham complex on simplicial meshes.",
   "type": "module",
-  "main": "src/lib/traceprojector.js",
-  "homepage": "https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections#readme",
+  "main": "src/traceprojector/traceprojector.js",
+  "homepage": "https://github.com/sachncs/traceprojector#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections.git"
+    "url": "https://github.com/sachncs/traceprojector.git"
   },
   "bugs": {
-    "url": "https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/issues"
+    "url": "https://github.com/sachncs/traceprojector/issues"
   },
   "author": "Sachin <sachncs@gmail.com>",
   "license": "MIT",
@@ -31,59 +31,65 @@
   "jsdelivr": "dist/traceprojector.umd.js",
   "exports": {
     ".": {
-      "types": "./src/lib/traceprojector.d.ts",
-      "default": "./src/lib/traceprojector.js"
+      "types": "./src/traceprojector/traceprojector.d.ts",
+      "default": "./src/traceprojector/traceprojector.js"
     },
     "./mesh": {
-      "types": "./src/lib/mesh.d.ts",
-      "default": "./src/lib/mesh.js"
+      "types": "./src/traceprojector/mesh.d.ts",
+      "default": "./src/traceprojector/mesh.js"
     },
     "./whitney": {
-      "types": "./src/lib/whitney.d.ts",
-      "default": "./src/lib/whitney.js"
+      "types": "./src/traceprojector/whitney.d.ts",
+      "default": "./src/traceprojector/whitney.js"
     },
     "./quadrature": {
-      "types": "./src/lib/quadrature.d.ts",
-      "default": "./src/lib/quadrature.js"
+      "types": "./src/traceprojector/quadrature.d.ts",
+      "default": "./src/traceprojector/quadrature.js"
     },
     "./utils": {
-      "types": "./src/lib/utils.d.ts",
-      "default": "./src/lib/utils.js"
+      "types": "./src/traceprojector/utils.d.ts",
+      "default": "./src/traceprojector/utils.js"
     },
     "./locator": {
-      "types": "./src/lib/locator.d.ts",
-      "default": "./src/lib/locator.js"
+      "types": "./src/traceprojector/locator.d.ts",
+      "default": "./src/traceprojector/locator.js"
     }
   },
-  "types": "src/lib/traceprojector.d.ts",
+  "types": "src/traceprojector/traceprojector.d.ts",
   "files": [
-    "src/lib/",
+    "src/traceprojector/",
     "dist/",
     "docs/",
     "README.md",
     "LICENSE"
   ],
+  "engines": {
+    "node": ">=26.0.0"
+  },
+  "workspaces": [
+    "web"
+  ],
   "scripts": {
-    "lint": "standard src/lib/**/*.js tests/**/*.js",
-    "lint:fix": "standard --fix src/lib/**/*.js tests/**/*.js",
+    "lint": "standard src/traceprojector/**/*.js tests/**/*.js",
+    "lint:fix": "standard --fix src/traceprojector/**/*.js tests/**/*.js",
     "test": "mocha tests/**/*.test.js",
     "test:watch": "mocha tests/**/*.test.js --watch",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm test",
-    "docs": "jsdoc2md --files \"src/lib/*.js\" \"src/lib/projectors/*.js\" > docs/api.md",
+    "docs": "jsdoc2md --files \"src/traceprojector/*.js\" \"src/traceprojector/projectors/*.js\" > docs/api.md",
     "build": "rollup -c rollup.dist.config.js",
-    "build:full": "npm run build && npm run docs"
+    "build:full": "npm run build && npm run docs",
+    "web:dev": "npm run -w web dev",
+    "web:build": "npm run -w web build",
+    "web:start": "npm run -w web start"
   },
   "devDependencies": {
-    "@babel/core": "^8.0.1",
-    "@babel/preset-env": "^7.29.7",
-    "@rollup/plugin-babel": "^7.1.0",
     "@rollup/plugin-commonjs": "^29.0.3",
-    "@rollup/plugin-node-resolve": "^16.0.1",
+    "@rollup/plugin-node-resolve": "^16.0.3",
     "@rollup/plugin-terser": "^1.0.0",
     "c8": "^12.0.0",
     "chai": "^6.2.2",
-    "jsdoc-to-markdown": "^9.1.1",
-    "mocha": "^11.8.0",
+    "jsdoc-to-markdown": "^9.1.3",
+    "mocha": "^12.0.0",
     "rollup": "^4.63.1",
     "sinon": "^22.1.0",
     "standard": "^17.1.2"
@@ -100,7 +106,8 @@
     "ignore": [
       "dist/",
       "coverage/",
-      "node_modules/"
+      "node_modules/",
+      "web/"
     ]
   }
 }

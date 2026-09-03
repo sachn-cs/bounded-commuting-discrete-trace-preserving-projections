@@ -5,8 +5,8 @@
  */
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { Solver } from '../src/lib/solver.js'
-import { SingularError } from '../src/lib/errors.js'
+import { Solver } from '../src/traceprojector/solver.js'
+import { SingularError } from '../src/traceprojector/errors.js'
 
 // Tests for Solver: surface stiffness symmetry, ill-conditioning
 // detection, singular matrix rejection, and degenerate triangle handling.

@@ -1,4 +1,4 @@
-# Contributing to TraceProjector
+# Contributing to traceprojector
 
 Thank you for your interest in contributing! This document outlines the workflow for proposing changes, reporting issues, and submitting pull requests.
 
@@ -58,7 +58,7 @@ We follow [Conventional Commits](https://www.conventionalcommits.org/) for commi
 ```bash
 git commit -m "feat(mesh): add anisotropic mesh support"
 git commit -m "fix(point-locator): correct barycentric coordinate calculation"
-git commit -m "docs: update API reference for TraceProjector class"
+git commit -m "docs: update API reference for Projector class"
 git commit -m "test(traceprojector): add edge cases for degenerate tetrahedra"
 git commit -m "chore: update rollup to v4"
 ```

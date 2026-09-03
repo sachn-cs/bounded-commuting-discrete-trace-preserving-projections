@@ -12,12 +12,15 @@ This project maintains high test coverage (currently >98% statements, >93% branc
 | `coverage.test.js` | Multi-tet meshes, mesh validation, bubble projection, boundary weight faults |
 | `convergence.test.js` | Convergence rates on refined cube meshes |
 | `interior_extension.test.js` | Ring projector, extension operator, decomposition properties |
-| `local_solver.test.js` | Surface stiffness assembly, constrained solves |
-| `math_utils.test.js` | Vector operations, LU solver, matrix inversion |
-| `Mesh.test.js` | Mesh topology, volume, boundary stars |
+| `solver.test.js` | Surface stiffness assembly, constrained solves |
+| `utils.test.js` | Vector operations, LU solver, matrix inversion |
+| `mesh.test.js` | Mesh topology, volume, boundary stars |
 | `point_locator.test.js` | AABB tree point-in-tet queries |
-| `Quadrature.test.js` | Gaussian quadrature exactness |
-| `Whitney.test.js` | Barycentric coordinates, Whitney basis functions |
+| `quadrature.test.js` | Gaussian quadrature exactness |
+| `whitney.test.js` | Barycentric coordinates, Whitney basis functions |
+| `weight.test.js` | Boundary weight cascade (Section 6.3) |
+| `bweight.test.js` | Per-simplex boundary weight solves |
+| `surface.test.js` | Surface differential operators and barycenter tent |
 
 ## Running Tests
 
@@ -33,7 +36,7 @@ Use Mocha's `describe`/`it` and Chai's `expect`:
 
 ```javascript
 import { expect } from 'chai'
-import { Mesh } from '../src/lib/mesh.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
 
 describe('Mesh', () => {
   it('computes positive volume', () => {

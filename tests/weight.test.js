@@ -8,11 +8,11 @@
  * Weight.compute() surface for a closed mesh.
  */
 import { expect } from 'chai'
-import { Mesh } from '../src/lib/mesh.js'
-import { Whitney } from '../src/lib/whitney.js'
-import { Projector } from '../src/lib/traceprojector.js'
-import { Weight } from '../src/lib/weight.js'
-import { generateUnitCubeMesh } from '../src/lib/generator.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
+import { Whitney } from '../src/traceprojector/whitney.js'
+import { Projector } from '../src/traceprojector/traceprojector.js'
+import { Weight } from '../src/traceprojector/weight.js'
+import { generateUnitCubeMesh } from '../src/traceprojector/generator.js'
 
 // Closed boundary of a single tetrahedron: 4 vertices, 6 edges, 4 faces.
 const vertices = [

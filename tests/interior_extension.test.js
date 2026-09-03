@@ -5,10 +5,10 @@
  * on both single-tet and multi-tet meshes.
  */
 import { expect } from 'chai'
-import { Mesh } from '../src/lib/mesh.js'
-import { Whitney } from '../src/lib/whitney.js'
-import { Projector } from '../src/lib/traceprojector.js'
-import { generateUnitCubeMesh } from '../src/lib/generator.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
+import { Whitney } from '../src/traceprojector/whitney.js'
+import { Projector } from '../src/traceprojector/traceprojector.js'
+import { generateUnitCubeMesh } from '../src/traceprojector/generator.js'
 
 const singleTet = {
   vertices: [[0, 0, 0], [1, 0, 0], [0, 1, 0], [0, 0, 1]],

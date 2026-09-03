@@ -4,8 +4,8 @@
  * face basis (Raviart-Thomas, 4 components), and degenerate-tet rejection.
  */
 import { expect } from 'chai'
-import { Whitney } from '../src/lib/whitney.js'
-import { Mesh } from '../src/lib/mesh.js'
+import { Whitney } from '../src/traceprojector/whitney.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
 
 // Tests barycentric coordinates, their gradient properties, Whitney
 // edge/face basis dimensions, and degenerate-tet rejection.

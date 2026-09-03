@@ -14,10 +14,12 @@ This repository follows a zero-config philosophy: every script is a single `npm 
 | Build | `npm run build` | Build Rollup bundles: ESM, CJS, UMD |
 | Docs | `npm run docs` | Regenerate `docs/api.md` from JSDoc comments |
 | Full Build | `npm run build:full` | Build + docs in one step |
+| Web Dev | `npm run web:dev` | Start the Next.js 16 playground in `web/` |
+| Web Build | `npm run web:build` | Build the Next.js 16 playground for production |
 
 ## Typical PR Workflow
 
-1. Make changes in `src/lib/` or `tests/`.
+1. Make changes in `src/traceprojector/` or `tests/`.
 2. Run `npm run lint:fix` to auto-format.
 3. Run `npm test` to verify behavior.
 4. Run `npm run build` to ensure bundles compile.
@@ -29,7 +31,7 @@ Create a file in `tests/` ending in `.test.js`. Mocha will pick it up automatica
 
 ```javascript
 import { expect } from 'chai'
-import { Mesh } from '../src/lib/mesh.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
 
 describe('My new feature', () => {
   it('does something', () => {

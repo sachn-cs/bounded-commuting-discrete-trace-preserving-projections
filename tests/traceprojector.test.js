@@ -5,9 +5,9 @@
  * enrichment behavior.
  */
 import { expect } from 'chai'
-import { Mesh } from '../src/lib/mesh.js'
-import { Whitney } from '../src/lib/whitney.js'
-import { Projector } from '../src/lib/traceprojector.js'
+import { Mesh } from '../src/traceprojector/mesh.js'
+import { Whitney } from '../src/traceprojector/whitney.js'
+import { Projector } from '../src/traceprojector/traceprojector.js'
 
 // Single-tet mesh: all 4 vertices are boundary, which exercises the
 // boundary-weight machinery for every projection.
