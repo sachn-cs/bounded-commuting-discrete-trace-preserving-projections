@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import { Copy, Play, RefreshCw, BarChart3, Code2, Box } from "lucide-react";
 
@@ -35,6 +36,18 @@ import { Toaster } from "@/components/ui/sonner";
 
 import { MeshViewer } from "@/components/mesh-viewer";
 import { ConvergenceChart } from "@/components/convergence-chart";
+
+const MeshViewerClient = dynamic(
+  () => import("@/components/mesh-viewer").then((m) => m.MeshViewer),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex h-full w-full items-center justify-center bg-zinc-950 text-sm text-muted-foreground">
+        Loading 3D viewer…
+      </div>
+    ),
+  }
+);
 import { buildProjector, projectAtPoint } from "@/lib/trace-bridge";
 import { FUNCTIONS, findFn } from "@/lib/functions";
 import { formatBary, formatNumber, generateCode } from "@/lib/format";
@@ -302,7 +315,7 @@ export default function PlaygroundPage() {
               <Card>
                 <CardContent className="p-0">
                   <div className="h-[560px] overflow-hidden rounded-md">
-                    <MeshViewer
+                    <MeshViewerClient
                       projector={projector}
                       functionId={functionId}
                       p={p}

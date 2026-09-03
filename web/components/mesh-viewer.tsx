@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useEffect } from "react";
+import { useMemo, useRef, useEffect, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls } from "@react-three/drei";
 import * as THREE from "three";
@@ -197,11 +197,19 @@ export function MeshViewer({
   showEdges,
 }: MeshViewerProps) {
   const fn = findFn(functionId);
+  const [mounted, setMounted] = useState(false);
 
-  if (!projector) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!projector || !mounted) {
     return (
-      <div className="flex h-full w-full items-center justify-center text-muted-foreground">
-        <p>Building mesh…</p>
+      <div
+        className="flex h-full w-full items-center justify-center text-sm text-muted-foreground"
+        style={{ background: COLORS.bg }}
+      >
+        <p>{projector ? "Initialising 3D viewer…" : "Building mesh…"}</p>
       </div>
     );
   }
@@ -210,6 +218,7 @@ export function MeshViewer({
     <Canvas
       camera={{ position: [1.4, 1.0, 1.4], fov: 45 }}
       style={{ background: COLORS.bg }}
+      dpr={[1, 2]}
     >
       <ambientLight intensity={0.5} />
       <directionalLight position={[5, 5, 5]} intensity={0.8} />
@@ -222,7 +231,7 @@ export function MeshViewer({
         showEdges={showEdges}
       />
       <gridHelper args={[1, 10, "#222", "#222"]} />
-      <OrbitControls makeDefault enableDamping />
+      <OrbitControls makeDefault />
     </Canvas>
   );
 }
