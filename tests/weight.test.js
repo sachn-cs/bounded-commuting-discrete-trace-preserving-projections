@@ -29,6 +29,15 @@ describe('Weight Section 6.3 boundary-weight cascade', () => {
     result = weight.compute()
   })
 
+  it('exposes a vertex duality functional per boundary vertex', () => {
+    expect(result.vertexBoundaryWeights.size).to.equal(4)
+    for (const [, vw] of result.vertexBoundaryWeights) {
+      expect(typeof vw.pair).to.equal('function')
+      expect(typeof vw.integral).to.equal('number')
+      expect(Array.isArray(vw.psi)).to.equal(true)
+    }
+  })
+
   it('exposes an edge duality functional per boundary edge', () => {
     expect(result.edgeBoundaryWeights.size).to.equal(6)
     for (const [, ew] of result.edgeBoundaryWeights) {

@@ -22,7 +22,8 @@ export class Weight {
   /**
    * Computes all boundary weights.
    * @returns Object containing vertexBoundaryData, edgeBoundaryData,
-   *   faceBoundaryData, and the Section 6.3 edge/face duality-functional maps.
+   *   faceBoundaryData, and the Section 6.3 vertex/edge/face
+   *   duality-functional maps.
    */
   compute(): {
     vertexBoundaryData: Map<
@@ -34,6 +35,15 @@ export class Weight {
       {v0: number; v1: number; tangent: number[]; length: number}
     >;
     faceBoundaryData: Map<number, {normal: number[]; area: number}>;
+    vertexBoundaryWeights: Map<
+      number,
+      {
+        pair: (u: (point: number[]) => number[]) => number;
+        integral: number;
+        psi: number[];
+        faces: number[][];
+      }
+    >;
     edgeBoundaryWeights: Map<
       number,
       {
