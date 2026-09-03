@@ -56,6 +56,10 @@ export class Projector {
   l2
   /** @type {!Map<number, {nodeMap: !Array<number>, psi: !Array<number>}>} */
   vertexData
+  /** @type {!Map<number, {ePair: !Array<number>, pair: function, eta: !Array<number>}>} */
+  edgeBoundaryWeights
+  /** @type {!Map<number, {face: !Array<number>, pair: function, nBasis: number}>} */
+  faceBoundaryWeights
   /** @type {!Set<number>} */
   edgeSet
   /** @type {!Set<number>} */
@@ -173,6 +177,8 @@ export class Projector {
     }
     const weights = this.weight.compute()
     this.vertexData = weights.vertexBoundaryData
+    this.edgeBoundaryWeights = weights.edgeBoundaryWeights
+    this.faceBoundaryWeights = weights.faceBoundaryWeights
   }
 
   /**

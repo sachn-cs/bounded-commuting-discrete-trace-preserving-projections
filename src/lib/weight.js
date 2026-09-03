@@ -7,6 +7,7 @@
 
 import { subtract, norm, triangleArea } from './utils.js'
 import { Solver } from './solver.js'
+import { edgeWeight, faceWeight } from './bweight.js'
 
 /**
  * Computes boundary patch weights used by the trace-preserving projection
@@ -34,17 +35,28 @@ export class Weight {
   }
 
   /**
-   * Computes all boundary weights.
+   * Computes all boundary weights, including the Section 6.3 edge and face
+   * duality functionals.
    * @return {Object} Boundary weight and geometry data.
    * @property {!Map<number, {nodeMap: !Array<number>, invNodeMap: !Map<number, number>, psi: !Array<number>}>} vertexBoundaryData
    * @property {!Map<number, {v0: number, v1: number, tangent: !Array<number>, length: number}>} edgeBoundaryData
    * @property {!Map<number, {normal: !Array<number>, area: number}>} faceBoundaryData
+   * @property {!Map<number, {ePair: !Array<number>, pair: function, edges: !Array<!Array<number>>, eta: !Array<number>}>} edgeBoundaryWeights
+   * @property {!Map<number, {face: !Array<number>, pair: function, nBasis: number}>} faceBoundaryWeights
    */
   compute () {
     const vertexBoundaryData = this.computeVertexWeights()
     const edgeBoundaryData = this.computeEdgeData()
     const faceBoundaryData = this.computeFaceData()
-    return { vertexBoundaryData, edgeBoundaryData, faceBoundaryData }
+    const edgeBoundaryWeights = this.computeEdgeWeights()
+    const faceBoundaryWeights = this.computeFaceWeights()
+    return {
+      vertexBoundaryData,
+      edgeBoundaryData,
+      faceBoundaryData,
+      edgeBoundaryWeights,
+      faceBoundaryWeights
+    }
   }
 
   /** @private */
@@ -108,6 +120,74 @@ export class Weight {
       }
     }
     return zeta0Vertex
+  }
+
+  /** @private */
+  computeEdgeWeights () {
+    const zeta1 = new Map()
+    const faces = this.mesh.getFaces()
+    const boundaryFaces = this.mesh.getBoundaryFaces()
+    for (const eIdx of this.mesh.getBoundaryEdges()) {
+      const e = this.mesh.getEdges()[eIdx]
+      try {
+        const star = boundaryFaces.filter(
+          (f) => faces[f].includes(e[0]) && faces[f].includes(e[1])
+        )
+        if (star.length === 0) {
+          this.onWarning({
+            code: 'BWC_EDGE_NO_STAR',
+            severity: 'warn',
+            message: `Weight: edge ${eIdx} has no boundary-face star; skipping.`
+          })
+          continue
+        }
+        const ew = edgeWeight(this.mesh.getVertices(), star.map((f) => faces[f]), e)
+        zeta1.set(eIdx, {
+          ePair: [e[0], e[1]],
+          pair: ew.pair,
+          edges: ew.edges,
+          eta: ew.eta
+        })
+      } catch (err) {
+        this.onWarning({
+          code: 'BWC_EDGE_FAILURE',
+          severity: 'warn',
+          message: `Weight: failed to compute edge weight for edge ${eIdx}: ${err.message}`
+        })
+      }
+    }
+    return zeta1
+  }
+
+  /** @private */
+  computeFaceWeights () {
+    const zeta2 = new Map()
+    const faces = this.mesh.getFaces()
+    const boundaryFaces = this.mesh.getBoundaryFaces()
+    for (const fIdx of this.mesh.getBoundaryFaces()) {
+      try {
+        const face = faces[fIdx]
+        // Extended star: boundary faces sharing at least one vertex with f.
+        const extStar = boundaryFaces.filter((g) => face.some((v) => faces[g].includes(v)))
+        if (extStar.length === 0) {
+          this.onWarning({
+            code: 'BWC_FACE_NO_STAR',
+            severity: 'warn',
+            message: `Weight: face ${fIdx} has no extended star; skipping.`
+          })
+          continue
+        }
+        const fw = faceWeight(this.mesh.getVertices(), extStar.map((g) => faces[g]), face)
+        zeta2.set(fIdx, { face, pair: fw.pair, nBasis: fw.nBasis })
+      } catch (err) {
+        this.onWarning({
+          code: 'BWC_FACE_FAILURE',
+          severity: 'warn',
+          message: `Weight: failed to compute face weight for face ${fIdx}: ${err.message}`
+        })
+      }
+    }
+    return zeta2
   }
 
   /** @private */
