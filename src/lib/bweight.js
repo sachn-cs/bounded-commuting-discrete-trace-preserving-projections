@@ -22,6 +22,7 @@
 import { dot, cross, subtract, norm, zeros, luSolve } from './utils.js'
 import { triangleFrame } from './surface.js'
 import { triangleQuadrature, barycentricToCartesian } from './quadrature.js'
+import { muTent } from './surface.js'
 
 const star2 = (n) => Array.from({ length: n }, () => new Array(n).fill(0))
 
@@ -79,16 +80,6 @@ function gradP1 (tv, coeff) {
 }
 
 /**
- * P1 value of coeff on triangle tv at quadrature abscissa lam (barycentric).
- * @param {!Array<number>} lam
- * @param {!Array<number>} coeff
- * @return {number}
- */
-function p1Value (lam, coeff) {
-  return lam[0] * coeff[0] + lam[1] * coeff[1] + lam[2] * coeff[2]
-}
-
-/**
  * Barycentric coordinates of a point in a triangle (area ratios).
  * @param {!Array<number>} pt
  * @param {!Array<!Array<number>>} tv
@@ -128,8 +119,9 @@ function faceInt (fr, f, order = 5) {
  * Solves (6.22) for psi_v^0 in the mean-zero complement of P1 on the boundary
  * star of v:
  *     (mu_v grad psi, grad u)_star = phi_v^partial(u) - (eta_v^0, u)_star
- * where eta_v^0 := 1/|es_partial(v)| (constant on the star) and mu_v is the
- * vertex tent (P1, value 1 at v, 0 at the other star vertices).
+ * where eta_v^0 := 1/|es_partial(v)| (constant on the star) and mu_v :=
+ * chi_{es_d(v)} mu is the Section 6.3 barycenter tent mu (eq. 6.21) restricted
+ * to the vertex star: 1 at each star-face barycenter, 0 on the star boundary.
  *
  * The weight is exposed as the duality functional (Lemma 6.2)
  *     (zeta_{0,v}^0, u)_Gamma = (eta,u) + (mu_v grad psi, grad u)
@@ -150,15 +142,18 @@ export function vertexWeight (verts, faces, vIdx) {
   const K = star2(n)
   for (const fr of frs) {
     const { face, tv, grads, areaAbs } = fr
-    const lv = face.indexOf(vIdx)
-    // mu = vertex tent : nodal coeff = 1 at v, 0 elsewhere.
-    const muCoeff = face.map((i) => (i === vIdx ? 1 : 0))
+    const barycenter = [
+      (tv[0][0] + tv[1][0] + tv[2][0]) / 3,
+      (tv[0][1] + tv[1][1] + tv[2][1]) / 3,
+      (tv[0][2] + tv[1][2] + tv[2][2]) / 3
+    ]
     for (let a = 0; a < 3; a++) {
       for (let b = 0; b < 3; b++) {
         let ks = 0
         for (let p = 0; p < q.bary.length; p++) {
-          const lam = q.bary[p]
-          ks += q.weights[p] * p1Value(lam, muCoeff) * dot(grads[a], grads[b])
+          const pt = barycentricToCartesian(tv, q.bary[p])
+          const mu = muTent(tv, barycenter, pt)
+          ks += q.weights[p] * mu * dot(grads[a], grads[b])
         }
         K[face[a]][face[b]] += ks * areaAbs
       }
@@ -188,8 +183,13 @@ export function vertexWeight (verts, faces, vIdx) {
       const gps = gradP1(tv, face.map((i) => psi[i]))
       // grad u: constant on face = grad of the P1 interpolant of u at nodes.
       const gu = gradP1(tv, face.map((i) => u(verts[i])))
-      // (mu * const) integrand: integrate mu over the face
-      const intMu = faceInt(fr, (p) => lamOf(p, tv, face.indexOf(vIdx)), 5)
+      // (mu grad psi, grad u): integrate mu (barycenter tent) over the face.
+      const barycenter = [
+        (tv[0][0] + tv[1][0] + tv[2][0]) / 3,
+        (tv[0][1] + tv[1][1] + tv[2][1]) / 3,
+        (tv[0][2] + tv[1][2] + tv[2][2]) / 3
+      ]
+      const intMu = faceInt(fr, (p) => muTent(tv, barycenter, p), 5)
       val += intMu * dot(gps, gu)
     }
     return val
