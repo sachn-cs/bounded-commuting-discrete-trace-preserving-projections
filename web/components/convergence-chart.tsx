@@ -38,11 +38,12 @@ function computeL2Error(
   const mesh = (
     projector.mesh as unknown as {
       getTetrahedra: () => number[][];
-      getVertex: (i: number) => [number, number, number];
+      getVertices: () => [number, number, number][];
     }
   );
   const tets = mesh.getTetrahedra();
-  const getVertex = mesh.getVertex.bind(mesh);
+  const vertices = mesh.getVertices();
+  const getVertex = (i: number): [number, number, number] => vertices[i]!;
 
   const gaussPts: Array<[number, number, number, number]> = [];
   for (let i = 0; i < quadratureOrder; i++) {

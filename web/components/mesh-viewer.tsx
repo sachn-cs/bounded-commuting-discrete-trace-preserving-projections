@@ -45,10 +45,11 @@ function TetMesh({
   const { geometry, edgeGeom, legend } = useMemo(() => {
     const mesh = projector.mesh as unknown as {
       getTetrahedra: () => number[][];
-      getVertex: (i: number) => [number, number, number];
+      getVertices: () => [number, number, number][];
     };
     const tetList = mesh.getTetrahedra();
-    const getVertex = mesh.getVertex.bind(mesh);
+    const vertices = mesh.getVertices();
+    const getVertex = (i: number): [number, number, number] => vertices[i]!;
 
     const positions: number[] = [];
     const normals: number[] = [];
