@@ -53,6 +53,10 @@
     "./locator": {
       "types": "./src/traceprojector/locator.d.ts",
       "default": "./src/traceprojector/locator.js"
+    },
+    "./generator": {
+      "types": "./src/traceprojector/generator.d.ts",
+      "default": "./src/traceprojector/generator.js"
     }
   },
   "types": "src/traceprojector/traceprojector.d.ts",

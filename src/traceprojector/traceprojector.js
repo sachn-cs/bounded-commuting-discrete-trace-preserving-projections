@@ -490,3 +490,16 @@ export class Projector {
     }
   }
 }
+
+export { Mesh } from './mesh.js'
+export { Whitney } from './whitney.js'
+export { Locator } from './locator.js'
+export { Refinement } from './refinement.js'
+export { Weight } from './weight.js'
+export { Bubble } from './bubble.js'
+export { Solver } from './solver.js'
+export { ValidateError, ProjectError, SingularError } from './errors.js'
+export { H1 } from './projectors/h1.js'
+export { Hcurl } from './projectors/hcurl.js'
+export { Hdiv } from './projectors/hdiv.js'
+export { L2 } from './projectors/l2.js'
