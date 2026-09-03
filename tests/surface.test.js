@@ -119,15 +119,20 @@ describe('Barycenter tent mu', () => {
   const face = [[0, 0, 0], [2, 0, 0], [0, 2, 0]]
   const bary = [(0 + 2 + 0) / 3, (0 + 0 + 2) / 3, 0]
 
-  it('is 1 at every original vertex and 0 at the barycenter', () => {
+  it('is 1 at the barycenter and 0 at every original vertex', () => {
     for (const v of face) {
-      expect(muTent(face, bary, v)).to.be.closeTo(1, 1e-6)
+      expect(muTent(face, bary, v)).to.be.closeTo(0, 1e-6)
     }
-    expect(muTent(face, bary, bary)).to.be.closeTo(0, 1e-6)
+    expect(muTent(face, bary, bary)).to.be.closeTo(1, 1e-6)
   })
 
-  it('is linear on the triangle (dual+midpoint), 0 at bary)', () => {
-    const mid = [(2 + bary[0]) / 2, (0 + bary[1]) / 2, 0]
+  it('vanishes on the face boundary (edge midpoint)', () => {
+    const mid = [(2 + 0) / 2, 0, 0]
+    expect(muTent(face, bary, mid)).to.be.closeTo(0, 1e-6)
+  })
+
+  it('is linear along a sub-triangle v0 -> bary (value rises 0 -> 1)', () => {
+    const mid = [(bary[0]) / 2, (bary[1]) / 2, 0]
     expect(muTent(face, bary, mid)).to.be.closeTo(0.5, 1e-6)
   })
 

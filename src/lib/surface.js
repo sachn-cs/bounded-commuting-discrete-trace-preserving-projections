@@ -118,14 +118,23 @@ export function divGamma (pt, verts, v, h = 1e-6) {
 }
 
 /**
- * Barycenter tent function mu on the Alfeld-split boundary mesh.
+ * Barycenter tent function mu on the Alfeld-split boundary mesh (Section 6.3,
+ * eq. 6.21; line 1559).
  *
- * On each boundary face the Alfeld split introduces the face barycenter m as a
- * vertex and partitions the face into three sub-triangles {v_i, v_{i+1}, m}.
- * The tent mu is the continuous piecewise-linear function that equals 1 at
- * every original boundary vertex and 0 at every barycenter.  On the
- * sub-triangle {vi, vj, m} it is linear with values (1, 1, 0), i.e. the sum of
- * the two vertex barycentric coordinates.
+ * Let mu be the globally continuous function on Gamma that is piecewise affine
+ * on the Alfeld-split boundary mesh, vanishes on every face boundary (the
+ * original boundary edges/vertices), and takes the value one at each face
+ * barycenter.  On each boundary face the Alfeld split introduces the face
+ * barycenter m and partitions the face into three sub-triangles {v_i, v_j, m};
+ * on the sub-triangle {vi, vj, m} the tent is linear with values
+ * (mu(vi), mu(vj), mu(m)) = (0, 0, 1), i.e. mu equals the barycentric
+ * coordinate of m (the third sub-triangle vertex).
+ *
+ * The per-simplex weights are
+ *
+ *     mu_sigma := chi_{es_partial(sigma)} * mu
+ *
+ * i.e. the barycenter tent restricted to the boundary extended star of sigma.
  *
  * @param {!Array<!Array<number>>} faceVerts - The three original face vertices
  *   [v0, v1, v2] (NOT including the barycenter).
@@ -134,24 +143,29 @@ export function divGamma (pt, verts, v, h = 1e-6) {
  * @return {number} mu(pt) in [0, 1].
  */
 export function muTent (faceVerts, barycenter, pt) {
-  // Find which of the three sub-triangles contains pt and evaluate the tent.
-  for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) {
-    const c = triBarycentric(faceVerts[i], faceVerts[j], barycenter, pt)
+  // Find which of the three sub-triangles {vi, vj, m} contains pt; mu = c[2],
+  // the barycentric coordinate of the barycenter node m (value 1 at m, 0 at
+  // the two face vertices, hence 0 on the face boundary).
+  const tri = (a, b) => {
+    const c = triBarycentric(faceVerts[a], faceVerts[b], barycenter, pt)
     if (c && c[0] >= -1e-9 && c[1] >= -1e-9 && c[2] >= -1e-9 && Number.isFinite(c[0])) {
-      const sum = c[0] + c[1]
-      return Math.max(0, Math.min(1, sum))
+      return Math.max(0, Math.min(1, c[2]))
     }
+    return null
   }
-  // Fallback: point on an edge shared by two sub-triangles or at barycenter.
-  const m = barycenter
-  const rp = norm([pt[0] - m[0], pt[1] - m[1], pt[2] - m[2]])
-  const dmax = Math.max(
-    norm([faceVerts[0][0] - m[0], faceVerts[0][1] - m[1], faceVerts[0][2] - m[2]]),
-    norm([faceVerts[1][0] - m[0], faceVerts[1][1] - m[1], faceVerts[1][2] - m[2]]),
-    norm([faceVerts[2][0] - m[0], faceVerts[2][1] - m[1], faceVerts[2][2] - m[2]])
-  )
-  if (dmax < 1e-18) return 0
-  return Math.max(0, Math.min(1, 1 - rp / dmax))
+  for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) {
+    const v = tri(i, j)
+    if (v !== null) return v
+  }
+  // Fallback (point on a sub-triangle edge / at the barycenter): average the
+  // candidate sub-triangle values.
+  const vals = []
+  for (const [i, j] of [[0, 1], [1, 2], [2, 0]]) {
+    const v = tri(i, j)
+    if (v !== null) vals.push(v)
+  }
+  if (vals.length === 0) return 0
+  return vals.reduce((s, x) => s + x, 0) / vals.length
 }
 
 /** @private */

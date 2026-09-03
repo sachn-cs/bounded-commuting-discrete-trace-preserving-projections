@@ -22,6 +22,7 @@ All notable changes to this project will be documented in this file.
 - Evaluate the H1 boundary DoF exactly at the vertex `u(v)` (eq. 6.25) instead of approximating the weighted surface integral
 - Use the exact edge DoF `∫_e u·t ds` on every H(curl) edge, interior included, instead of midpoint tangential sampling
 - Add Section 2.3 surface differential operators (`grad_Γ`, `curl_Γ`, `div_Γ`, `rot_Γ`) and the Section 6.3 barycenter tent `μ` on Alfeld-split faces
+- Fix the Section 6.3 tent `μ` (line 1559 / eq. 6.21) to be `1` at each face barycenter and `0` on every face boundary (edges/vertices), piecewise affine on the Alfeld-split sub-triangles — the globally-continuous paper definition — instead of the reverse vertex-valued tent
 
 ### Changed (naming conventions)
 
