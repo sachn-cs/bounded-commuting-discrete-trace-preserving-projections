@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - Add Section 2.3 surface differential operators (`grad_Γ`, `curl_Γ`, `div_Γ`, `rot_Γ`) and the Section 6.3 barycenter tent `μ` on Alfeld-split faces
 - Fix the Section 6.3 tent `μ` (line 1559 / eq. 6.21) to be `1` at each face barycenter and `0` on every face boundary (edges/vertices), piecewise affine on the Alfeld-split sub-triangles — the globally-continuous paper definition — instead of the reverse vertex-valued tent
 - Use the paper's `μ_σ = χ_{es_∂(σ)} μ` (barycenter tent on the boundary extended star) in the vertex boundary weight `ζ_{0,v}^0`, replacing the vertex tent; the dual property `(ζ,v^0, u)=u(v)` (eq. 6.25) is preserved
+- Add the edge boundary weight `ζ_{0,e}^1` (Section 6.3.2) on the lowest-order surface `N_0` (Whitney 1-form) space: build the star's edge indexing, assemble the Whitney mass matrix, solve for `η_e^1 = M^{-1}d` from the intrinsic edge moments `d_k = ∫_e W_k·t_e`, and expose its duality functional `(ζ, u) = (η_e^1, u)` reproducing the edge degree of freedom for H(curl) traces in `N_0` (eq. 6.31)
 
 ### Changed (naming conventions)
 

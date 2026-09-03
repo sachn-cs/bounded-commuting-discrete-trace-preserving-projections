@@ -249,3 +249,198 @@ function integrateScalar1 (fr, f, q) {
 function lamOf (pt, tv, a) {
   return baryOnTriangle(pt, tv)[a]
 }
+
+/**
+ * Builds the surface N_0 (Whitney 1-form) trace space over a collection of
+ * boundary faces: a global edge indexing (with a fixed orientation) plus, for
+ * each face, the mapping of its three local edges to global ids and the sign
+ * aligning each local Whitney basis to the global edge orientation.
+ *
+ * @param {!Array<!Array<number>>} verts
+ * @param {!Array<!Array<number>>} faces - Faces as global index triples.
+ * @return {{edges:!Array<!Array<number>>, edgeKey:!Map<string,number>, faceEdges:!Array<!Array<number>>, faceSign:!Array<!Array<number>>}}
+ */
+function buildN0Space (verts, faces) {
+  const key = (a, b) => (a < b ? a + ':' + b : b + ':' + a)
+  const edgeMap = new Map()
+  for (const f of faces) {
+    for (const [a, b] of [[f[0], f[1]], [f[1], f[2]], [f[2], f[0]]]) {
+      const k = key(a, b)
+      if (!edgeMap.has(k)) edgeMap.set(k, [a, b])
+    }
+  }
+  const edges = []
+  const edgeKey = new Map()
+  for (const [k, ab] of edgeMap.entries()) {
+    edgeKey.set(k, edges.length)
+    edges.push(ab)
+  }
+  const faceEdges = []
+  const faceSign = []
+  for (const f of faces) {
+    const fe = []
+    const fs = []
+    for (const [a, b] of [[f[0], f[1]], [f[1], f[2]], [f[2], f[0]]]) {
+      const ge = edgeKey.get(key(a, b))
+      fe.push(ge)
+      const [ga, gb] = edges[ge]
+      fs.push(a === ga && b === gb ? 1 : -1)
+    }
+    faceEdges.push(fe)
+    faceSign.push(fs)
+  }
+  return { edges, edgeKey, faceEdges, faceSign }
+}
+
+/**
+ * Surface Whitney 1-form W_{ij} = lam_i grad lam_j - lam_j grad lam_i at a
+ * point in the tangent plane of a face.
+ * @param {!Array<number>} pt
+ * @param {!Array<!Array<number>>} tv
+ * @param {!Array<!Array<number>>} grads
+ * @param {number} i
+ * @param {number} j
+ * @return {!Array<number>}
+ */
+function whitney1 (pt, tv, grads, i, j) {
+  const lam = baryOnTriangle(pt, tv)
+  const gi = grads[i]
+  const gj = grads[j]
+  return [
+    lam[i] * gj[0] - lam[j] * gi[0],
+    lam[i] * gj[1] - lam[j] * gi[1],
+    lam[i] * gj[2] - lam[j] * gi[2]
+  ]
+}
+
+/**
+ * Scales a vector by s.
+ * @param {!Array<number>} v
+ * @param {number} s
+ * @return {!Array<number>}
+ */
+function scaleVec (v, s) {
+  return [v[0] * s, v[1] * s, v[2] * s]
+}
+
+/**
+ * Edge boundary weight zeta_{0,e}^1 (Section 6.3.2), lowest-order N_0.
+ *
+ * On the extended star of edge e the edge DoF vector
+ *
+ *     d_k := int_e W_k . t_e ds
+ *
+ * is assembled by 1D Gauss quadrature over the featured edge, and the L2-dual
+ * representative eta_e^1 solves the Whitney mass system
+ *
+ *     M eta_e^1 = d.
+ *
+ * The weight is exposed as the duality functional
+ *
+ *     (zeta_{0,e}^1, u)_Gamma = (eta_e^1, u) = sum_k eta_k (W_k, u)
+ *
+ * which is integrable for a general input 1-form u and reproduces the edge
+ * degree of freedom for u whose H(curl) trace lies in N_0 (eq. 6.31):
+ *
+ *     (zeta_{0,e}^1, tr^1 u)_Gamma = int_e u . t_e.
+ *
+ * (Given this eta_e^1 the Section 6.3.2 right-hand side (6.28) vanishes on the
+ * N_0 trace space, so the modal psi_e^1 term (mu_e curl psi, curl u) drops out
+ * and the L2-dual alone reproduces (6.31).)
+ *
+ * @param {!Array<!Array<number>>} verts
+ * @param {!Array<!Array<number>>} faces - Faces of the edge star.
+ * @param {!Array<number>} ePair - Featured edge as a global vertex pair.
+ * @return {{pair:function(function(number[]):!Array<number>):number, edges:!Array<!Array<number>>, eta:!Array<number>}}
+ */
+export function edgeWeight (verts, faces, ePair) {
+  if (ePair.length !== 2) throw new Error('edgeWeight: ePair must be a vertex pair')
+  const n0 = buildN0Space(verts, faces)
+  const { edges, faceEdges, faceSign } = n0
+  const ne = edges.length
+  const q = triangleQuadrature(5)
+
+  const frs = faces.map((face) => {
+    const tv = face.map((i) => verts[i])
+    const grads = [0, 1, 2].map((i) => {
+      const c = [0, 0, 0]
+      c[i] = 1
+      return gradP1(tv, c)
+    })
+    const { area } = triangleFrame(tv)
+    return { face, tv, grads, areaAbs: Math.abs(area) }
+  })
+
+  // Whitney mass matrix M[ge][gf] = (W_ge, W_gf)_star.
+  const M = star2(ne)
+  for (let fi = 0; fi < frs.length; fi++) {
+    const fr = frs[fi]
+    const fe = faceEdges[fi]
+    for (let a = 0; a < 3; a++) {
+      for (let b = 0; b < 3; b++) {
+        let mint = 0
+        for (let p = 0; p < q.bary.length; p++) {
+          const pt = barycentricToCartesian(fr.tv, q.bary[p])
+          const wa = scaleVec(whitney1(pt, fr.tv, fr.grads, a % 3, (a + 1) % 3), faceSign[fi][a])
+          const wb = scaleVec(whitney1(pt, fr.tv, fr.grads, b % 3, (b + 1) % 3), faceSign[fi][b])
+          mint += q.weights[p] * dot(wa, wb)
+        }
+        M[fe[a]][fe[b]] += mint * fr.areaAbs
+      }
+    }
+  }
+
+  // Featured edge: endpoints, length, and the closed-form edge moments
+  // d_k = int_e W_k . t_e ds.
+  const pa = verts[ePair[0]]
+  const pb = verts[ePair[1]]
+  const eLen = norm(subtract(pb, pa))
+
+  // For the surface Whitney 1-form W_ab = lam_a grad lam_b - lam_b grad lam_a,
+  // the featured edge moment is intrinsic: along (p,q), grad lam_i . t_e =
+  // (delta_{i,q} - delta_{i,p}) / eLen and lam_i varies linearly from delta_{i,p}
+  // to delta_{i,q}.  The length scale cancels, giving
+  //   d_k = int_0^1 [ lam_a(t) (d_{b,q}-d_{b,p}) - lam_b(t) (d_{a,q}-d_{a,p}) ] dt
+  // with lam_a(t) = d_{a,p}(1-t) + d_{a,q} t.
+  const d = new Array(ne).fill(0)
+  for (let gk = 0; gk < ne; gk++) {
+    const [a, b] = edges[gk]
+    const dap = a === ePair[0] ? 1 : 0
+    const daq = a === ePair[1] ? 1 : 0
+    const dbp = b === ePair[0] ? 1 : 0
+    const dbq = b === ePair[1] ? 1 : 0
+    const gbt = (dbq - dbp) / eLen
+    const gat = (daq - dap) / eLen
+    // integrate over t in [0,1]: lam_a(t) = dap*(1-t)+daq*t, lam_b similarly
+    const Ia = 0.5 * (dap + daq) // int_0^1 lam_a
+    const Ib = 0.5 * (dbp + dbq) // int_0^1 lam_b
+    d[gk] = (Ia * gbt - Ib * gat) * eLen
+  }
+
+  // eta_e^1 = M^{-1} d.
+  const eta = luSolve(M.map((r) => r.slice()), d.slice())
+
+  // Duality functional: (zeta, u) = (eta, u) = sum_k eta_k (W_k, u).
+  const pair = (u) => {
+    const fun = new Array(ne).fill(0)
+    for (let fi = 0; fi < frs.length; fi++) {
+      const fr = frs[fi]
+      const fe = faceEdges[fi]
+      for (let le = 0; le < 3; le++) {
+        const gej = fe[le]
+        let it = 0
+        for (let p = 0; p < q.bary.length; p++) {
+          const pt = barycentricToCartesian(fr.tv, q.bary[p])
+          const w = scaleVec(whitney1(pt, fr.tv, fr.grads, le % 3, (le + 1) % 3), faceSign[fi][le])
+          it += q.weights[p] * dot(w, u(pt))
+        }
+        fun[gej] += it * fr.areaAbs
+      }
+    }
+    let val = 0
+    for (let j = 0; j < ne; j++) val += eta[j] * fun[j]
+    return val
+  }
+
+  return { pair, edges, eta }
+}
