@@ -28,16 +28,18 @@ All notable changes to this project will be documented in this file.
 
 ### Changed (BREAKING)
 
-- **Move source tree from `src/lib/` to `src/traceprojector/`.** The
-  package now ships as `import { … } from 'traceprojector'` with the
-  source living in `src/traceprojector/`. `package.json`
-  (`main`, `module`, `unpkg`, `jsdelivr`, every `exports.*`, `types`,
-  `files`), the `docs` script glob, the rollup `input`, the
-  `architecture.md` module map, the `math.md` cross-references, the
-  `setup.md` / `testing.md` / `development.md` examples, and every
-  `tests/*.test.js` import are updated. The directory layout inside
-  is preserved, so internal relative imports (`./utils.js`,
-  `../projectors/h1.js`) still resolve.
+- **Move source tree from `src/lib/` to `traceprojector/`.** The
+  `src/` wrapper is gone — the package now ships with the source
+  living in a top-level `traceprojector/` directory, so consumers
+  can do `import { … } from 'traceprojector'` and the layout is
+  obvious from the repo root. `package.json` (`main`, `module`,
+  `unpkg`, `jsdelivr`, every `exports.*`, `types`, `files`), the
+  `docs` script glob, the rollup `input`, the `architecture.md`
+  module map, the `math.md` cross-references, the
+  `setup.md` / `testing.md` / `development.md` examples, the
+  README, and every `tests/*.test.js` import are updated. The
+  internal layout (`utils.js`, `projectors/h1.js`, …) is preserved,
+  so the relative imports inside the package still resolve.
 - **Drop Babel from the build pipeline.** `@babel/core`,
   `@babel/preset-env`, `@rollup/plugin-babel`, and `babel.config.json`
   are removed: the project is pure ESM and only ever runs on Node

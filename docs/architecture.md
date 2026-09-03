@@ -3,7 +3,7 @@
 ## Module Map
 
 ```
-src/traceprojector/
+traceprojector/
   traceprojector.js     — Main API: Projector class
   mesh.js               — Tetrahedral mesh topology, geometry, adjacency
   whitney.js            — Barycentric coords, Whitney edge/face basis

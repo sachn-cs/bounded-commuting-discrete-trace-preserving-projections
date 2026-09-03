@@ -140,7 +140,7 @@ npm run build
 
 > 💡 The `web/` directory is an npm workspace. When you `import
 > { … } from 'traceprojector'` inside the playground, npm symlinks
-> it back to `src/traceprojector/` so you never have to rebuild the
+> it back to `traceprojector/` so you never have to rebuild the
 > lib to see your changes.
 
 ---
@@ -267,7 +267,7 @@ For operators / maintainers:
 | `utils` | module | Linear-algebra primitives (LU, `3×3` inverse, …). |
 
 All subpaths are exposed via the `exports` field in `package.json` and
-include hand-written `.d.ts` files in `src/traceprojector/`.
+include hand-written `.d.ts` files in `traceprojector/`.
 
 ---
 
@@ -304,7 +304,7 @@ freedom (see [docs/math.md](docs/math.md) for the full exposition).
 ## Project structure
 
 ```
-src/traceprojector/           — Library source (pure ESM, no runtime deps)
+traceprojector/                — Library source (pure ESM, no runtime deps)
   traceprojector.js           — Projector class (main API)
   mesh.js, whitney.js, quadrature.js
   utils.js, solver.js, locator.js, refinement.js

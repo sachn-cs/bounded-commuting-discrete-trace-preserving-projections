@@ -6,7 +6,7 @@ const pkgName = 'traceprojector'
 
 export default [
   {
-    input: 'src/traceprojector/traceprojector.js',
+    input: 'traceprojector/traceprojector.js',
     output: {
       file: `dist/${pkgName}.esm.js`,
       format: 'esm',
@@ -18,7 +18,7 @@ export default [
     ]
   },
   {
-    input: 'src/traceprojector/traceprojector.js',
+    input: 'traceprojector/traceprojector.js',
     output: {
       file: `dist/${pkgName}.cjs.js`,
       format: 'cjs',
@@ -31,7 +31,7 @@ export default [
     ]
   },
   {
-    input: 'src/traceprojector/traceprojector.js',
+    input: 'traceprojector/traceprojector.js',
     output: {
       file: `dist/${pkgName}.umd.js`,
       format: 'umd',

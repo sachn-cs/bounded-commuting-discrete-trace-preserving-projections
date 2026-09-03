@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "description": "Bounded, Commuting, Discrete-trace Preserving Projections for the 3D de Rham complex on simplicial meshes.",
   "type": "module",
-  "main": "src/traceprojector/traceprojector.js",
+  "main": "traceprojector/traceprojector.js",
   "homepage": "https://github.com/sachncs/traceprojector#readme",
   "repository": {
     "type": "git",
@@ -31,37 +31,37 @@
   "jsdelivr": "dist/traceprojector.umd.js",
   "exports": {
     ".": {
-      "types": "./src/traceprojector/traceprojector.d.ts",
-      "default": "./src/traceprojector/traceprojector.js"
+      "types": "./traceprojector/traceprojector.d.ts",
+      "default": "./traceprojector/traceprojector.js"
     },
     "./mesh": {
-      "types": "./src/traceprojector/mesh.d.ts",
-      "default": "./src/traceprojector/mesh.js"
+      "types": "./traceprojector/mesh.d.ts",
+      "default": "./traceprojector/mesh.js"
     },
     "./whitney": {
-      "types": "./src/traceprojector/whitney.d.ts",
-      "default": "./src/traceprojector/whitney.js"
+      "types": "./traceprojector/whitney.d.ts",
+      "default": "./traceprojector/whitney.js"
     },
     "./quadrature": {
-      "types": "./src/traceprojector/quadrature.d.ts",
-      "default": "./src/traceprojector/quadrature.js"
+      "types": "./traceprojector/quadrature.d.ts",
+      "default": "./traceprojector/quadrature.js"
     },
     "./utils": {
-      "types": "./src/traceprojector/utils.d.ts",
-      "default": "./src/traceprojector/utils.js"
+      "types": "./traceprojector/utils.d.ts",
+      "default": "./traceprojector/utils.js"
     },
     "./locator": {
-      "types": "./src/traceprojector/locator.d.ts",
-      "default": "./src/traceprojector/locator.js"
+      "types": "./traceprojector/locator.d.ts",
+      "default": "./traceprojector/locator.js"
     },
     "./generator": {
-      "types": "./src/traceprojector/generator.d.ts",
-      "default": "./src/traceprojector/generator.js"
+      "types": "./traceprojector/generator.d.ts",
+      "default": "./traceprojector/generator.js"
     }
   },
-  "types": "src/traceprojector/traceprojector.d.ts",
+  "types": "traceprojector/traceprojector.d.ts",
   "files": [
-    "src/traceprojector/",
+    "traceprojector/",
     "dist/",
     "docs/",
     "README.md",
@@ -74,12 +74,12 @@
     "web"
   ],
   "scripts": {
-    "lint": "standard src/traceprojector/**/*.js tests/**/*.js",
-    "lint:fix": "standard --fix src/traceprojector/**/*.js tests/**/*.js",
+    "lint": "standard traceprojector/**/*.js tests/**/*.js",
+    "lint:fix": "standard --fix traceprojector/**/*.js tests/**/*.js",
     "test": "mocha tests/**/*.test.js",
     "test:watch": "mocha tests/**/*.test.js --watch",
     "test:coverage": "c8 --reporter=text --reporter=html --reporter=lcov npm test",
-    "docs": "jsdoc2md --files \"src/traceprojector/*.js\" \"src/traceprojector/projectors/*.js\" > docs/api.md",
+    "docs": "jsdoc2md --files \"traceprojector/*.js\" \"traceprojector/projectors/*.js\" > docs/api.md",
     "build": "rollup -c rollup.dist.config.js",
     "build:full": "npm run build && npm run docs",
     "web:dev": "npm run -w web dev",

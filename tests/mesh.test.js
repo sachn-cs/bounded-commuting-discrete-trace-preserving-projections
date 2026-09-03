@@ -4,8 +4,8 @@
  * signs, vertex stars, and Alfeld/Worsey-Farin split idempotency.
  */
 import { expect } from 'chai'
-import { Mesh } from '../src/traceprojector/mesh.js'
-import { Refinement } from '../src/traceprojector/refinement.js'
+import { Mesh } from '../traceprojector/mesh.js'
+import { Refinement } from '../traceprojector/refinement.js'
 
 // Verifies Mesh topology construction: faces, edges, boundary sets,
 // volume, orientation signs, vertex stars, and multi-tet connectivity.

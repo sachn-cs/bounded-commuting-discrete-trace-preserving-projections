@@ -58,4 +58,4 @@ const { Mesh, Whitney, Projector } = require('traceprojector')
 
 ## TypeScript
 
-Hand-written `.d.ts` files are included in `src/traceprojector/`. If your bundler does not resolve them automatically, add the package to your `tsconfig.json` `types` array or reference the declaration files directly.
+Hand-written `.d.ts` files are included in `traceprojector/`. If your bundler does not resolve them automatically, add the package to your `tsconfig.json` `types` array or reference the declaration files directly.

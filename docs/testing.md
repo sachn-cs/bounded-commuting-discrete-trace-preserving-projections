@@ -36,7 +36,7 @@ Use Mocha's `describe`/`it` and Chai's `expect`:
 
 ```javascript
 import { expect } from 'chai'
-import { Mesh } from '../src/traceprojector/mesh.js'
+import { Mesh } from '../traceprojector/mesh.js'
 
 describe('Mesh', () => {
   it('computes positive volume', () => {

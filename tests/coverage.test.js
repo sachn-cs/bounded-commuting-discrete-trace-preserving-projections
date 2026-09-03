@@ -5,13 +5,13 @@
  */
 import { expect } from 'chai'
 import sinon from 'sinon'
-import { Mesh } from '../src/traceprojector/mesh.js'
-import { Whitney } from '../src/traceprojector/whitney.js'
-import { Projector } from '../src/traceprojector/traceprojector.js'
-import { Bubble } from '../src/traceprojector/bubble.js'
-import { ValidateError } from '../src/traceprojector/errors.js'
-import { factorial, dot } from '../src/traceprojector/utils.js'
-import { generateUnitCubeMesh } from '../src/traceprojector/generator.js'
+import { Mesh } from '../traceprojector/mesh.js'
+import { Whitney } from '../traceprojector/whitney.js'
+import { Projector } from '../traceprojector/traceprojector.js'
+import { Bubble } from '../traceprojector/bubble.js'
+import { ValidateError } from '../traceprojector/errors.js'
+import { factorial, dot } from '../traceprojector/utils.js'
+import { generateUnitCubeMesh } from '../traceprojector/generator.js'
 
 // Multi-tet mesh: exercises projection across shared faces/edges and
 // verifies commuting properties hold element-by-element.

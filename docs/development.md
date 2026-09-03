@@ -19,7 +19,7 @@ This repository follows a zero-config philosophy: every script is a single `npm 
 
 ## Typical PR Workflow
 
-1. Make changes in `src/traceprojector/` or `tests/`.
+1. Make changes in `traceprojector/` or `tests/`.
 2. Run `npm run lint:fix` to auto-format.
 3. Run `npm test` to verify behavior.
 4. Run `npm run build` to ensure bundles compile.
@@ -31,7 +31,7 @@ Create a file in `tests/` ending in `.test.js`. Mocha will pick it up automatica
 
 ```javascript
 import { expect } from 'chai'
-import { Mesh } from '../src/traceprojector/mesh.js'
+import { Mesh } from '../traceprojector/mesh.js'
 
 describe('My new feature', () => {
   it('does something', () => {
