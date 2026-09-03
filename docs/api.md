@@ -116,6 +116,100 @@ average of the function over each tetrahedron.</p>
 ## Functions
 
 <dl>
+<dt><a href="#solveConstrained">solveConstrained(K, b, k)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Solves the bordered system for a kernel Lagrange-multiplier constraint:
+    K x + alg * k = b,  (k, x) = 0.</p>
+</dd>
+<dt><a href="#faceRec">faceRec(tv, face)</a> ⇒ <code>Object</code></dt>
+<dd><p>Per-face P1 assembly record.</p>
+</dd>
+<dt><a href="#gradP1">gradP1(tv, coeff)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Gradient of the P1 function with nodal values coeff on triangle tv.</p>
+</dd>
+<dt><a href="#baryOnTriangle">baryOnTriangle(pt, tv)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Barycentric coordinates of a point in a triangle (area ratios).</p>
+</dd>
+<dt><a href="#faceInt">faceInt(fr, f, order)</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates scalar f over a face using barycentric quadrature.</p>
+</dd>
+<dt><a href="#vertexWeight">vertexWeight(verts, faces, vIdx)</a> ⇒ <code>Object</code></dt>
+<dd><p>Vertex boundary weight zeta_{0,v}^0 (Section 6.3.1).</p>
+<p>Solves (6.22) for psi_v^0 in the mean-zero complement of P1 on the boundary
+star of v:
+    (mu_v grad psi, grad u)_star = phi_v^partial(u) - (eta_v^0, u)<em>star
+where eta_v^0 := 1/|es_partial(v)| (constant on the star) and mu_v :=
+chi</em>{es_d(v)} mu is the Section 6.3 barycenter tent mu (eq. 6.21) restricted
+to the vertex star: 1 at each star-face barycenter, 0 on the star boundary.</p>
+<p>The weight is exposed as the duality functional (Lemma 6.2)
+    (zeta_{0,v}^0, u)_Gamma = (eta,u) + (mu_v grad psi, grad u)
+which reproduces phi_v^partial(u) = u(v) for P1 u.</p>
+</dd>
+<dt><a href="#integrateScalar">integrateScalar(frs, f, q)</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates a scalar over all faces.</p>
+</dd>
+<dt><a href="#areaIntegralScalar">areaIntegralScalar(frs, f, q)</a> ⇒ <code>number</code></dt>
+<dd><p>Area-weighted integral of a scalar over all faces.</p>
+</dd>
+<dt><a href="#integrateScalar1">integrateScalar1(fr, f, q)</a> ⇒ <code>number</code></dt>
+<dd><p>Integrates over a single face (area-weighted).</p>
+</dd>
+<dt><a href="#lamOf">lamOf(pt, tv, a)</a> ⇒ <code>number</code></dt>
+<dd><p>Local (face) barycentric coordinate value of a point for node index a.</p>
+</dd>
+<dt><a href="#buildN0Space">buildN0Space(verts, faces)</a> ⇒ <code>Object</code></dt>
+<dd><p>Builds the surface N_0 (Whitney 1-form) trace space over a collection of
+boundary faces: a global edge indexing (with a fixed orientation) plus, for
+each face, the mapping of its three local edges to global ids and the sign
+aligning each local Whitney basis to the global edge orientation.</p>
+</dd>
+<dt><a href="#whitney1">whitney1(pt, tv, grads, i, j)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Surface Whitney 1-form W_{ij} = lam_i grad lam_j - lam_j grad lam_i at a
+point in the tangent plane of a face.</p>
+</dd>
+<dt><a href="#scaleVec">scaleVec(v, s)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Scales a vector by s.</p>
+</dd>
+<dt><a href="#edgeWeight">edgeWeight(verts, faces, ePair)</a> ⇒ <code>Object</code></dt>
+<dd><p>Edge boundary weight zeta_{0,e}^1 (Section 6.3.2), lowest-order N_0.</p>
+<p>On the extended star of edge e the edge DoF vector</p>
+<pre><code>d_k := int_e W_k . t_e ds
+</code></pre>
+<p>is assembled by 1D Gauss quadrature over the featured edge, and the L2-dual
+representative eta_e^1 solves the Whitney mass system</p>
+<pre><code>M eta_e^1 = d.
+</code></pre>
+<p>The weight is exposed as the duality functional</p>
+<pre><code>(zeta_{0,e}^1, u)_Gamma = (eta_e^1, u) = sum_k eta_k (W_k, u)
+</code></pre>
+<p>which is integrable for a general input 1-form u and reproduces the edge
+degree of freedom for u whose H(curl) trace lies in N_0 (eq. 6.31):</p>
+<pre><code>(zeta_{0,e}^1, tr^1 u)_Gamma = int_e u . t_e.
+</code></pre>
+<p>(Given this eta_e^1 the Section 6.3.2 right-hand side (6.28) vanishes on the
+N_0 trace space, so the modal psi_e^1 term (mu_e curl psi, curl u) drops out
+and the L2-dual alone reproduces (6.31).)</p>
+</dd>
+<dt><a href="#rt0Basis">rt0Basis(fr)</a> ⇒ <code>Array.&lt;function(Array.&lt;number&gt;): !Array.&lt;number&gt;&gt;</code></dt>
+<dd><p>Lowest-order surface Raviart-Thomas (RT_0) basis on a single face.</p>
+<p>The three basis functions are affine tangential vector fields, one per edge,
+with a constant normal trace of unit flux on their own edge and vanishing
+normal flux on the other two (the standard 2D RT_0): for edge e with
+opposite vertex p_o, RT_e(x) = (|e| / (2 A)) (x - p_o), projected into the
+face&#39;s tangent plane.</p>
+</dd>
+<dt><a href="#faceWeight">faceWeight(verts, faces, fFace)</a> ⇒ <code>Object</code></dt>
+<dd><p>Face boundary weight zeta_{0,f}^2 (Section 6.3.3), lowest-order RT_0.</p>
+<p>On the extended star of the featured face, assembles the lowest-order surface
+Raviart-Thomas trace basis, its mass matrix, and the face-DoF vector</p>
+<pre><code>d_k := int_f RT_k . n dA   (normal moment over the featured face),
+</code></pre>
+<p>then forms eta_f^2 = M^{-1} d and exposes the duality functional</p>
+<pre><code>(zeta_{0,f}^2, u)_Gamma = (eta_f^2, u) = sum_k eta_k (RT_k, u)
+</code></pre>
+<p>reproducing the face degree of freedom for H(div) traces in RT_0 (eq. 6.36):</p>
+<pre><code>(zeta_{0,f}^2, tr^2 u)_Gamma = int_f u . n.
+</code></pre>
+</dd>
 <dt><a href="#generateUnitCubeMesh">generateUnitCubeMesh(n)</a> ⇒ <code><a href="#Mesh">Mesh</a></code></dt>
 <dd><p>Generates a uniform tetrahedral mesh of the unit cube [0,1]^3 using the
 Freudenthal (Kuhn) triangulation: each cube is split into 6 tets along
@@ -180,6 +274,45 @@ for polynomial spaces up to degree 3 remains full-rank.</p>
 </dd>
 <dt><a href="#integrateTetrahedron">integrateTetrahedron(vertices, fn, [order])</a> ⇒ <code>number</code></dt>
 <dd><p>Integrates a scalar function over a tetrahedron using quadrature.</p>
+</dd>
+<dt><a href="#triangleFrame">triangleFrame(verts)</a> ⇒ <code>Object</code></dt>
+<dd><p>Returns the unit outward normal and two orthonormal tangent directions of a
+triangle, plus the oriented area-normal (cross product of two edges).</p>
+</dd>
+<dt><a href="#gradGamma">gradGamma(pt, verts, u, [h])</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Surface gradient of a scalar function at a point on a triangle.
+Projects the ambient gradient onto the tangent plane.</p>
+</dd>
+<dt><a href="#rotGamma">rotGamma(pt, verts, u)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Surface rotated gradient: rot_Gamma(u) = n x grad_Gamma(u)  (eq. 2.10).</p>
+</dd>
+<dt><a href="#curlGamma">curlGamma(pt, verts, v, [h])</a> ⇒ <code>number</code></dt>
+<dd><p>Surface scalar curl of a tangential vector field: the adjoint of rot_Gamma
+under the L2 inner product (eq. 2.14a).</p>
+<p>On a flat triangle with orthonormal tangent frame {t1, t2} the field
+v = v1 t1 + v2 t2 has curl_Gamma(v) = dv2/dt1 - dv1/dt2 (a scalar).  Use the
+weak/adjoint relation to evaluate it pointwise via first-order differences
+in the tangent frame.</p>
+</dd>
+<dt><a href="#divGamma">divGamma(pt, verts, v, [h])</a> ⇒ <code>number</code></dt>
+<dd><p>Surface divergence of a tangential vector field: -(adjoint of grad_Gamma)
+under the L2 inner product (eq. 2.14b).</p>
+</dd>
+<dt><a href="#muTent">muTent(faceVerts, barycenter, pt)</a> ⇒ <code>number</code></dt>
+<dd><p>Barycenter tent function mu on the Alfeld-split boundary mesh (Section 6.3,
+eq. 6.21; line 1559).</p>
+<p>Let mu be the globally continuous function on Gamma that is piecewise affine
+on the Alfeld-split boundary mesh, vanishes on every face boundary (the
+original boundary edges/vertices), and takes the value one at each face
+barycenter.  On each boundary face the Alfeld split introduces the face
+barycenter m and partitions the face into three sub-triangles {v_i, v_j, m};
+on the sub-triangle {vi, vj, m} the tent is linear with values
+(mu(vi), mu(vj), mu(m)) = (0, 0, 1), i.e. mu equals the barycentric
+coordinate of m (the third sub-triangle vertex).</p>
+<p>The per-simplex weights are</p>
+<pre><code>mu_sigma := chi_{es_partial(sigma)} * mu
+</code></pre>
+<p>i.e. the barycenter tent restricted to the boundary extended star of sigma.</p>
 </dd>
 <dt><a href="#dot">dot(a, b)</a> ⇒ <code>number</code></dt>
 <dd><p>Computes the dot product of two 3D vectors.</p>
@@ -296,6 +429,267 @@ a constant (lambda * 1) and is the true constrained solution.
 n for which n! fits in a JavaScript Number without overflowing.
 
 **Kind**: global constant  
+<a name="solveConstrained"></a>
+
+## solveConstrained(K, b, k) ⇒ <code>Array.&lt;number&gt;</code>
+Solves the bordered system for a kernel Lagrange-multiplier constraint:
+    K x + alg * k = b,  (k, x) = 0.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| K | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| b | <code>Array.&lt;number&gt;</code> | 
+| k | <code>Array.&lt;number&gt;</code> | 
+
+<a name="faceRec"></a>
+
+## faceRec(tv, face) ⇒ <code>Object</code>
+Per-face P1 assembly record.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| face | <code>Array.&lt;number&gt;</code> | 
+
+<a name="gradP1"></a>
+
+## gradP1(tv, coeff) ⇒ <code>Array.&lt;number&gt;</code>
+Gradient of the P1 function with nodal values coeff on triangle tv.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| coeff | <code>Array.&lt;number&gt;</code> | 
+
+<a name="baryOnTriangle"></a>
+
+## baryOnTriangle(pt, tv) ⇒ <code>Array.&lt;number&gt;</code>
+Barycentric coordinates of a point in a triangle (area ratios).
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> | 
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+
+<a name="faceInt"></a>
+
+## faceInt(fr, f, order) ⇒ <code>number</code>
+Integrates scalar f over a face using barycentric quadrature.
+
+**Kind**: global function  
+
+| Param | Type | Default |
+| --- | --- | --- |
+| fr | <code>Object</code> |  | 
+| f | <code>function</code> |  | 
+| order | <code>number</code> | <code>5</code> | 
+
+<a name="vertexWeight"></a>
+
+## vertexWeight(verts, faces, vIdx) ⇒ <code>Object</code>
+Vertex boundary weight zeta_{0,v}^0 (Section 6.3.1).
+
+Solves (6.22) for psi_v^0 in the mean-zero complement of P1 on the boundary
+star of v:
+    (mu_v grad psi, grad u)_star = phi_v^partial(u) - (eta_v^0, u)_star
+where eta_v^0 := 1/|es_partial(v)| (constant on the star) and mu_v :=
+chi_{es_d(v)} mu is the Section 6.3 barycenter tent mu (eq. 6.21) restricted
+to the vertex star: 1 at each star-face barycenter, 0 on the star boundary.
+
+The weight is exposed as the duality functional (Lemma 6.2)
+    (zeta_{0,v}^0, u)_Gamma = (eta,u) + (mu_v grad psi, grad u)
+which reproduces phi_v^partial(u) = u(v) for P1 u.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Coords of the star's vertices. |
+| faces | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Star faces as index triples. |
+| vIdx | <code>number</code> | Index of v in verts. |
+
+<a name="integrateScalar"></a>
+
+## integrateScalar(frs, f, q) ⇒ <code>number</code>
+Integrates a scalar over all faces.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| frs | <code>Array.&lt;!Object&gt;</code> | 
+| f | <code>function</code> | 
+| q | <code>Object</code> | 
+
+<a name="areaIntegralScalar"></a>
+
+## areaIntegralScalar(frs, f, q) ⇒ <code>number</code>
+Area-weighted integral of a scalar over all faces.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| frs | <code>Array.&lt;!Object&gt;</code> | 
+| f | <code>function</code> | 
+| q | <code>Object</code> | 
+
+<a name="integrateScalar1"></a>
+
+## integrateScalar1(fr, f, q) ⇒ <code>number</code>
+Integrates over a single face (area-weighted).
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| fr | <code>Object</code> | 
+| f | <code>function</code> | 
+| q | <code>Object</code> | 
+
+<a name="lamOf"></a>
+
+## lamOf(pt, tv, a) ⇒ <code>number</code>
+Local (face) barycentric coordinate value of a point for node index a.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> | 
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| a | <code>number</code> | 
+
+<a name="buildN0Space"></a>
+
+## buildN0Space(verts, faces) ⇒ <code>Object</code>
+Builds the surface N_0 (Whitney 1-form) trace space over a collection of
+boundary faces: a global edge indexing (with a fixed orientation) plus, for
+each face, the mapping of its three local edges to global ids and the sign
+aligning each local Whitney basis to the global edge orientation.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> |  |
+| faces | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Faces as global index triples. |
+
+<a name="whitney1"></a>
+
+## whitney1(pt, tv, grads, i, j) ⇒ <code>Array.&lt;number&gt;</code>
+Surface Whitney 1-form W_{ij} = lam_i grad lam_j - lam_j grad lam_i at a
+point in the tangent plane of a face.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> | 
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| grads | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| i | <code>number</code> | 
+| j | <code>number</code> | 
+
+<a name="scaleVec"></a>
+
+## scaleVec(v, s) ⇒ <code>Array.&lt;number&gt;</code>
+Scales a vector by s.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| v | <code>Array.&lt;number&gt;</code> | 
+| s | <code>number</code> | 
+
+<a name="edgeWeight"></a>
+
+## edgeWeight(verts, faces, ePair) ⇒ <code>Object</code>
+Edge boundary weight zeta_{0,e}^1 (Section 6.3.2), lowest-order N_0.
+
+On the extended star of edge e the edge DoF vector
+
+    d_k := int_e W_k . t_e ds
+
+is assembled by 1D Gauss quadrature over the featured edge, and the L2-dual
+representative eta_e^1 solves the Whitney mass system
+
+    M eta_e^1 = d.
+
+The weight is exposed as the duality functional
+
+    (zeta_{0,e}^1, u)_Gamma = (eta_e^1, u) = sum_k eta_k (W_k, u)
+
+which is integrable for a general input 1-form u and reproduces the edge
+degree of freedom for u whose H(curl) trace lies in N_0 (eq. 6.31):
+
+    (zeta_{0,e}^1, tr^1 u)_Gamma = int_e u . t_e.
+
+(Given this eta_e^1 the Section 6.3.2 right-hand side (6.28) vanishes on the
+N_0 trace space, so the modal psi_e^1 term (mu_e curl psi, curl u) drops out
+and the L2-dual alone reproduces (6.31).)
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> |  |
+| faces | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Faces of the edge star. |
+| ePair | <code>Array.&lt;number&gt;</code> | Featured edge as a global vertex pair. |
+
+<a name="rt0Basis"></a>
+
+## rt0Basis(fr) ⇒ <code>Array.&lt;function(Array.&lt;number&gt;): !Array.&lt;number&gt;&gt;</code>
+Lowest-order surface Raviart-Thomas (RT_0) basis on a single face.
+
+The three basis functions are affine tangential vector fields, one per edge,
+with a constant normal trace of unit flux on their own edge and vanishing
+normal flux on the other two (the standard 2D RT_0): for edge e with
+opposite vertex p_o, RT_e(x) = (|e| / (2 A)) (x - p_o), projected into the
+face's tangent plane.
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;function(Array.&lt;number&gt;): !Array.&lt;number&gt;&gt;</code> - The three RT_0 fields.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| fr | <code>Object</code> | A face record {tv, grads, areaAbs, normal}. |
+
+<a name="faceWeight"></a>
+
+## faceWeight(verts, faces, fFace) ⇒ <code>Object</code>
+Face boundary weight zeta_{0,f}^2 (Section 6.3.3), lowest-order RT_0.
+
+On the extended star of the featured face, assembles the lowest-order surface
+Raviart-Thomas trace basis, its mass matrix, and the face-DoF vector
+
+    d_k := int_f RT_k . n dA   (normal moment over the featured face),
+
+then forms eta_f^2 = M^{-1} d and exposes the duality functional
+
+    (zeta_{0,f}^2, u)_Gamma = (eta_f^2, u) = sum_k eta_k (RT_k, u)
+
+reproducing the face degree of freedom for H(div) traces in RT_0 (eq. 6.36):
+
+    (zeta_{0,f}^2, tr^2 u)_Gamma = int_f u . n.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> |  |
+| faces | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Faces of the extended star incl. f. |
+| fFace | <code>Array.&lt;number&gt;</code> | Featured face as a global index triple. |
+
 <a name="generateUnitCubeMesh"></a>
 
 ## generateUnitCubeMesh(n) ⇒ [<code>Mesh</code>](#Mesh)
@@ -519,6 +913,113 @@ Integrates a scalar function over a tetrahedron using quadrature.
 | vertices | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Tetrahedron vertices. |
 | fn | <code>function</code> | Scalar function. |
 | [order] | <code>number</code> | Quadrature order (default 2). |
+
+<a name="triangleFrame"></a>
+
+## triangleFrame(verts) ⇒ <code>Object</code>
+Returns the unit outward normal and two orthonormal tangent directions of a
+triangle, plus the oriented area-normal (cross product of two edges).
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | The three vertices [p0, p1, p2]. |
+
+<a name="gradGamma"></a>
+
+## gradGamma(pt, verts, u, [h]) ⇒ <code>Array.&lt;number&gt;</code>
+Surface gradient of a scalar function at a point on a triangle.
+Projects the ambient gradient onto the tangent plane.
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;number&gt;</code> - Tangential R^3 vector.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> | The point (must lie on the triangle). |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | Triangle vertices. |
+| u | <code>function</code> | Scalar function. |
+| [h] | <code>number</code> | Finite-difference step. |
+
+<a name="rotGamma"></a>
+
+## rotGamma(pt, verts, u) ⇒ <code>Array.&lt;number&gt;</code>
+Surface rotated gradient: rot_Gamma(u) = n x grad_Gamma(u)  (eq. 2.10).
+
+**Kind**: global function  
+**Returns**: <code>Array.&lt;number&gt;</code> - Tangential R^3 vector.  
+
+| Param | Type |
+| --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> | 
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+| u | <code>function</code> | 
+
+<a name="curlGamma"></a>
+
+## curlGamma(pt, verts, v, [h]) ⇒ <code>number</code>
+Surface scalar curl of a tangential vector field: the adjoint of rot_Gamma
+under the L2 inner product (eq. 2.14a).
+
+On a flat triangle with orthonormal tangent frame {t1, t2} the field
+v = v1 t1 + v2 t2 has curl_Gamma(v) = dv2/dt1 - dv1/dt2 (a scalar).  Use the
+weak/adjoint relation to evaluate it pointwise via first-order differences
+in the tangent frame.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> |  |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> |  |
+| v | <code>function</code> | Tangential R^3 vector field. |
+| [h] | <code>number</code> |  |
+
+<a name="divGamma"></a>
+
+## divGamma(pt, verts, v, [h]) ⇒ <code>number</code>
+Surface divergence of a tangential vector field: -(adjoint of grad_Gamma)
+under the L2 inner product (eq. 2.14b).
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| pt | <code>Array.&lt;number&gt;</code> |  |
+| verts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> |  |
+| v | <code>function</code> | Tangential R^3 vector field. |
+| [h] | <code>number</code> |  |
+
+<a name="muTent"></a>
+
+## muTent(faceVerts, barycenter, pt) ⇒ <code>number</code>
+Barycenter tent function mu on the Alfeld-split boundary mesh (Section 6.3,
+eq. 6.21; line 1559).
+
+Let mu be the globally continuous function on Gamma that is piecewise affine
+on the Alfeld-split boundary mesh, vanishes on every face boundary (the
+original boundary edges/vertices), and takes the value one at each face
+barycenter.  On each boundary face the Alfeld split introduces the face
+barycenter m and partitions the face into three sub-triangles {v_i, v_j, m};
+on the sub-triangle {vi, vj, m} the tent is linear with values
+(mu(vi), mu(vj), mu(m)) = (0, 0, 1), i.e. mu equals the barycentric
+coordinate of m (the third sub-triangle vertex).
+
+The per-simplex weights are
+
+    mu_sigma := chi_{es_partial(sigma)} * mu
+
+i.e. the barycenter tent restricted to the boundary extended star of sigma.
+
+**Kind**: global function  
+**Returns**: <code>number</code> - mu(pt) in [0, 1].  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| faceVerts | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | The three original face vertices   [v0, v1, v2] (NOT including the barycenter). |
+| barycenter | <code>Array.&lt;number&gt;</code> | The face barycenter [x, y, z]. |
+| pt | <code>Array.&lt;number&gt;</code> | Query point. |
 
 <a name="dot"></a>
 

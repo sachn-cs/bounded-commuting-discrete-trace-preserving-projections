@@ -52,6 +52,34 @@ tr^l(Pi^l v) = tr^l(v)    on boundary faces/edges/vertices
 
 Where `tr^l` is the canonical trace operator for the `l`-form space.
 
+### Boundary Weight Cascade (Section 6.3)
+
+The lowest-order trace-preserving boundary weights are constructed sequentially
+over the surface (`bweight` module):
+
+```
+zeta_{0,v}^0  ->  zeta_{0,e}^1  ->  zeta_{0,f}^2
+```
+
+Each weight lives in/acts on a staggered boundary trace space and is exposed as
+an L2-duality functional that reproduces the canonical degree of freedom:
+
+- `zeta_{0,v}^0` (Section 6.3.1): on `P_1`, reproduces `phi_v(u) = u(v)` (eq. 6.25).
+- `zeta_{0,e}^1` (Section 6.3.2): on `N_0` (surface Whitney 1-forms), reproduces
+  `phi_e(u) = int_e u . t_e` (eq. 6.31).
+- `zeta_{0,f}^2` (Section 6.3.3): on `RT_0` (surface Raviart-Thomas), reproduces
+  `phi_f(u) = int_f u . n` (eq. 6.36).
+
+All weights use the Section 6.3 tent `mu_sigma = chi_{es_d(sigma)} * mu` (eq.
+6.21), where `mu` is the globally-continuous barycenter tent that is `1` at each
+face barycenter and `0` on every face boundary. The L2-dual representative is
+`eta = M^{-1} d`, with `d` the intrinsic DoF moment vector and `M` the mass
+matrix of the boundary trace space on the (possibly extended) star.
+
+The supporting surface differential operators (`grad_Gamma`, `rot_Gamma`,
+`curl_Gamma`, `div_Gamma`, eqs. 2.10/2.14a/2.14b) and the tent `mu` are provided
+by the `surface` module.
+
 ### Commuting Diagram
 
 The projections commute with the exterior derivative:
