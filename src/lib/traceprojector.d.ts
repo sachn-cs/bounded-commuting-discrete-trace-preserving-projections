@@ -30,6 +30,28 @@ export class Projector {
   computeBoundaryWeights(): void;
 
   /**
+   * Cross-checks the projected (exact) boundary degrees of freedom against the
+   * Section 6.3 boundary weights.  Applies each wired weight functional to its
+   * boundary simplex's canonical exact trace basis field and verifies it
+   * recovers the normalized DoF (1), without altering how DoFs are computed.
+   * Call computeBoundaryWeights() first.
+   * @param tol - Absolute tolerance (default 1e-6).
+   * @returns Result object with ok, passed, failing, and the per-simplex checks.
+   */
+  verifyBoundaryWeights(tol?: number): {
+    ok: boolean;
+    passed: number;
+    failing: number;
+    checks: Array<{
+      l: number;
+      idx: number;
+      edge?: number;
+      expected: number;
+      got: number;
+    }>;
+  };
+
+  /**
    * H1 projection (l=0) of a scalar field.
    * @param u - Scalar function.
    * @param point - Cartesian point [x, y, z].

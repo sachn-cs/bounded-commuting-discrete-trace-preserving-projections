@@ -5,9 +5,8 @@
  * tetrahedral meshes with boundary-aware trace preservation.
  */
 
-import {
-  numericalGradient
-} from './utils.js'
+import { numericalGradient } from './utils.js'
+import { verifyBoundaryWeights as runVerifyBoundaryWeights } from './boundaryVerify.js'
 import { ProjectError } from './errors.js'
 import { Weight } from './weight.js'
 import { Locator } from './locator.js'
@@ -186,11 +185,11 @@ export class Projector {
    * @param {number} tIdx
    * @return {number}
    */
-projectH1 (u, point, tIdx) {
-     Projector.validatePoint(point)
-     this.validateTetIdx(tIdx)
-     return this.h1.project(u, point, tIdx)
-   }
+  projectH1 (u, point, tIdx) {
+    Projector.validatePoint(point)
+    this.validateTetIdx(tIdx)
+    return this.h1.project(u, point, tIdx)
+  }
 
   /**
    * H(curl) projection (l=1).
@@ -381,6 +380,25 @@ projectH1 (u, point, tIdx) {
       }
     }
     return result
+  }
+
+  /**
+   * Cross-checks the projected (exact) boundary degrees of freedom against the
+   * Section 6.3 boundary weights.
+   *
+   * The projectors evaluate boundary DoFs exactly (u(v), ∫_e u·t, ∫_f u·n),
+   * which is correct for any input.  The §6.3 weights ζ reproduce these DoFs on
+   * the discrete trace spaces (eqs. 6.25 / 6.31 / 6.36).  This method applies
+   * each wired weight functional to its boundary simplex's canonical exact
+   * trace basis field and verifies it recovers the normalized DoF (1),
+   * without altering how DoFs are computed.  Call computeBoundaryWeights()
+   * first.
+   *
+   * @param {number=} tol - Absolute tolerance (default 1e-6).
+   * @return {{ok: boolean, passed: number, failing: number, checks: !Array<*>}}
+   */
+  verifyBoundaryWeights (tol = 1e-6) {
+    return runVerifyBoundaryWeights(this, tol)
   }
 
   /**

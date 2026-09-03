@@ -6,6 +6,8 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- Add `Projector.verifyBoundaryWeights` (Option 1 of the Section 6.3 cascade as a checked cross-check, per the "verify, don't replace" decision): the exact boundary DoFs stay `u(v)`, `∫_e u·t`, `∫_f u·n` for any input, and each wired §6.3 weight functional is applied to its boundary simplex's canonical discrete trace basis field (P1 hat `λ_v`, Whitney 1-form `W_e`, face `RT_0`) to confirm it recovers the normalized DoF — see `src/lib/boundaryVerify.js` and `tests/weight.test.js`
+- Fix `Weight` vertex-weight assembly after an Alfeld/Worsey-Farin split: the mesh appends barycenter vertices, so `bweight.vertexWeight` now receives a compact, remapped local vertex set for each boundary star (the previous full-vertex pass produced a singular stiffness matrix after the split and silently skipped every vertex weight)
 - Add Tech Stack section to README
 - Add Security section to README
 - Add Code of Conduct section to README

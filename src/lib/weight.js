@@ -73,7 +73,18 @@ export class Weight {
           })
           continue
         }
-        const vw = vertexWeight(this.mesh.getVertices(), star.map((f) => faces[f]), vIdx)
+        const sf = star.map((f) => faces[f])
+        // Compact local vertex set: the boundary vertex weight (and its
+        // pair evaluation at P1 nodes) assumes verts contains exactly the
+        // vertices referenced by the star faces.  The mesh may have been
+        // Alfeld/Worsey-Farin split (extra barycenter vertices appended), so
+        // remap the star to a minimal local vertex list before assembling.
+        const localIds = [...new Set(sf.flat())].sort((a, b) => a - b)
+        const localMap = new Map(localIds.map((id, i) => [id, i]))
+        const localVerts = localIds.map((id) => this.mesh.getVertices()[id])
+        const localFaces = sf.map((f) => f.map((i) => localMap.get(i)))
+        const localVIdx = localMap.get(vIdx)
+        const vw = vertexWeight(localVerts, localFaces, localVIdx)
         zeta0.set(vIdx, { pair: vw.pair, integral: vw.integral, psi: vw.psi, faces: vw.faces })
       } catch (err) {
         this.onWarning({

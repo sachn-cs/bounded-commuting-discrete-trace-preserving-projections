@@ -117,6 +117,22 @@ average of the function over each tetrahedron.</p>
 ## Functions
 
 <dl>
+<dt><a href="#verifyBoundaryWeights">verifyBoundaryWeights(projector, [tol])</a> ⇒ <code>Object</code></dt>
+<dd><p>Verifies the wired boundary weights against the exact trace basis fields.</p>
+<p>For each boundary simplex σ the weight functional pair_σ is applied to σ&#39;s
+canonical discrete trace basis field (the P1 hat λ_v, the Whitney 1-form W_e,
+or the face RT_0 field) and checked against the simplex&#39;s normalized DoF
+(equal to 1).  Mismatches beyond <code>tol</code> are collected and returned; each
+simplex that reproduces its DoF contributes an entry to <code>passed</code>.</p>
+</dd>
+<dt><a href="#rtBasis">rtBasis(tv)</a> ⇒ <code>Array.&lt;function(Array.&lt;number&gt;): !Array.&lt;number&gt;&gt;</code></dt>
+<dd><p>Lowest-order surface Raviart-Thomas (RT_0) basis on a single face, matching
+the construction in bweight.js: for edge e with opposite vertex p_o,
+RT_e(x) = (|e| / (2 A)) (x - p_o) projected into the face tangent plane.</p>
+</dd>
+<dt><a href="#triangulateNormal">triangulateNormal(mesh, fIdx, tv)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
+<dd><p>Outward unit normal of a boundary face, from its stored geometry.</p>
+</dd>
 <dt><a href="#solveConstrained">solveConstrained(K, b, k)</a> ⇒ <code>Array.&lt;number&gt;</code></dt>
 <dd><p>Solves the bordered system for a kernel Lagrange-multiplier constraint:
     K x + alg * k = b,  (k, x) = 0.</p>
@@ -430,6 +446,50 @@ a constant (lambda * 1) and is the true constrained solution.
 n for which n! fits in a JavaScript Number without overflowing.
 
 **Kind**: global constant  
+<a name="verifyBoundaryWeights"></a>
+
+## verifyBoundaryWeights(projector, [tol]) ⇒ <code>Object</code>
+Verifies the wired boundary weights against the exact trace basis fields.
+
+For each boundary simplex σ the weight functional pair_σ is applied to σ's
+canonical discrete trace basis field (the P1 hat λ_v, the Whitney 1-form W_e,
+or the face RT_0 field) and checked against the simplex's normalized DoF
+(equal to 1).  Mismatches beyond `tol` are collected and returned; each
+simplex that reproduces its DoF contributes an entry to `passed`.
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| projector | [<code>Projector</code>](#Projector) | A Projector with computeBoundaryWeights() done. |
+| [tol] | <code>number</code> | Absolute tolerance for the DoF reproduction check. |
+
+<a name="rtBasis"></a>
+
+## rtBasis(tv) ⇒ <code>Array.&lt;function(Array.&lt;number&gt;): !Array.&lt;number&gt;&gt;</code>
+Lowest-order surface Raviart-Thomas (RT_0) basis on a single face, matching
+the construction in bweight.js: for edge e with opposite vertex p_o,
+RT_e(x) = (|e| / (2 A)) (x - p_o) projected into the face tangent plane.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+
+<a name="triangulateNormal"></a>
+
+## triangulateNormal(mesh, fIdx, tv) ⇒ <code>Array.&lt;number&gt;</code>
+Outward unit normal of a boundary face, from its stored geometry.
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| mesh | [<code>Mesh</code>](#Mesh) | 
+| fIdx | <code>number</code> | 
+| tv | <code>Array.&lt;!Array.&lt;number&gt;&gt;</code> | 
+
 <a name="solveConstrained"></a>
 
 ## solveConstrained(K, b, k) ⇒ <code>Array.&lt;number&gt;</code>
