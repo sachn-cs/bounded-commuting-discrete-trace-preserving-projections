@@ -2,116 +2,193 @@
 
 All notable changes to this project will be documented in this file.
 
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
+and this project follows [Semantic Versioning](https://semver.org/).
+
 ## [Unreleased]
+
+## [0.1.0] — 2026-09-03
+
+The first release under the **traceprojector** name on Node 26. Adds
+the new `web/` playground, drops Babel, and finishes the file-layout
+rebrand.
 
 ### Added
 
-- Add a new `web/` workspace: a Next.js 16 + shadcn/ui playground that
+- **New `web/` workspace.** A Next.js 16 + shadcn/ui playground that
   consumes the lib via npm workspaces, with a 3D tetrahedral-mesh
   viewer (three.js / @react-three/fiber), an API playground with
   copy-to-clipboard code export, and a live convergence plot
-  (Recharts). Start it with `npm run web:dev`; build with
+  (Recharts). Start it with `npm run web:dev`; build it with
   `npm run web:build`. A new `web` job in `.github/workflows/ci.yml`
   builds the playground on every push.
-- Add a "Try it online" link from the root `README.md` to the
-  playground, alongside a convexfolio-style "Before you start /
-  Installation / Your first run / Configuration / Where to go next"
-  skeleton that keeps the existing API, math, architecture,
-  performance, and tech-stack sections as a second half.
-- Add a top-level `engines.node: ">=26.0.0"` and a `workspaces:
-  ["web"]` field to `package.json`. New convenience scripts
-  `web:dev`, `web:build`, and `web:start` proxy into the workspace.
-- Add `next-env.d.ts`, `.next/`, `out/`, and `.turbo/` to
-  `.gitignore` for the `web/` workspace.
-- Add a `web/build` job to the CI workflow that compiles the
-  Next.js playground alongside the Node test job.
-
-### Changed (BREAKING)
-
-- **Move source tree from `src/lib/` to `traceprojector/`.** The
-  `src/` wrapper is gone — the package now ships with the source
-  living in a top-level `traceprojector/` directory, so consumers
-  can do `import { … } from 'traceprojector'` and the layout is
-  obvious from the repo root. `package.json` (`main`, `module`,
-  `unpkg`, `jsdelivr`, every `exports.*`, `types`, `files`), the
-  `docs` script glob, the rollup `input`, the `architecture.md`
-  module map, the `math.md` cross-references, the
-  `setup.md` / `testing.md` / `development.md` examples, the
-  README, and every `tests/*.test.js` import are updated. The
-  internal layout (`utils.js`, `projectors/h1.js`, …) is preserved,
-  so the relative imports inside the package still resolve.
-- **Drop Babel from the build pipeline.** `@babel/core`,
-  `@babel/preset-env`, `@rollup/plugin-babel`, and `babel.config.json`
-  are removed: the project is pure ESM and only ever runs on Node
-  26+, so the Babel pass was a no-op.
-- **Pin to Node 26.** The CI matrix is reduced from `[20, 22]` to a
-  single `[26]` job, and the `publish.yml` workflow is updated
-  accordingly. `docs/setup.md` requirements bumped to Node 26,
-  npm 11.
-- **Repository URL** updated to `https://github.com/sachncs/traceprojector`
-  in `package.json` (`homepage`, `repository.url`, `bugs.url`), every
-  README badge, the CI workflow URLs (implicit), and `docs/setup.md`
-  install instructions. The historical commit links in the changelog
-  still point at the original `bounded-commuting-…` repo because
-  they reference real past commits.
-- **Error class names** in docs: `MeshValidationError` → `ValidateError`,
-  `ProjectionError` → `ProjectError`, `SingularMatrixError` →
-  `SingularError` (the class names in source were already renamed in
-  the previous Unreleased entry; this just brings the docs in line).
-- **README, CONTRIBUTING, SECURITY** rewritten to use the public class
-  name `Projector` and the package name `traceprojector` (no more
-  `TraceProjector` / `Bcdtpp`).
+- **New "Try it online" entry** in the root `README.md` that points
+  at the bundled web playground, alongside a convexfolio-style
+  *What is this? / Who is this for? / What can it do? / Before you
+  start / Installation / Your first run / Configuration / Where to
+  go next* skeleton. The original technical depth (API, math,
+  architecture, performance, tech stack) is kept as a second half.
+- **`Projector.verifyBoundaryWeights`** (Section 6.3 cross-check): the
+  exact boundary DoFs stay `u(v)`, `∫_e u·t`, `∫_f u·n` for any
+  input, and each wired §6.3 weight functional is applied to its
+  boundary simplex's canonical discrete trace basis field (P¹ hat
+  `λ_v`, Whitney 1-form `W_e`, face `RT_0`) to confirm it recovers
+  the normalized DoF — see `traceprojector/boundaryVerify.js` and
+  `tests/weight.test.js`.
+- **`Weight` vertex-weight assembly fix after an Alfeld/Worsey-Farin
+  split:** the mesh appends barycenter vertices, so `bweight.vertexWeight`
+  now receives a compact, remapped local vertex set for each boundary
+  star. The previous full-vertex pass produced a singular stiffness
+  matrix after the split and silently skipped every vertex weight.
+- **Edge boundary weight `ζ_{0,e}^1`** (Section 6.3.2) on the
+  lowest-order surface `N_0` (Whitney 1-form) space: build the
+  star's edge indexing, assemble the Whitney mass matrix, solve for
+  `η_e^1 = M^{-1}d` from the intrinsic edge moments
+  `d_k = ∫_e W_k·t_e`, and expose the duality functional
+  `(ζ, u) = (η_e^1, u)` reproducing the edge degree of freedom for
+  H(curl) traces in `N_0` (eq. 6.31).
+- **Face boundary weight `ζ_{0,f}^2`** (Section 6.3.3) on the
+  lowest-order surface `RT_0` (Raviart-Thomas) space: assemble the
+  RT_0 mass matrix over the extended star, solve for
+  `η_f^2 = M^{-1}d` from the featured-face normal moments
+  `d_k = ∫_f RT_k·n`, and expose the duality functional
+  `(ζ, u) = (η_f^2, u)` reproducing the face degree of freedom for
+  H(div) traces in `RT_0` (eq. 6.36).
+- **Section 2.3 surface differential operators** (`grad_Γ`, `curl_Γ`,
+  `div_Γ`, `rot_Γ`) and the Section 6.3 barycenter tent `μ` on
+  Alfeld-split faces, in the new `traceprojector/surface.js` module.
+- **Section 6.3 boundary-weight cascade** wired into `Weight.compute()`:
+  `vertexBoundaryWeights`, `edgeBoundaryWeights`, and
+  `faceBoundaryWeights` (built from `bweight.vertexWeight` /
+  `edgeWeight` / `faceWeight` over each boundary vertex's star,
+  edge's star, and face's extended star), stored on `Projector` via
+  `computeBoundaryWeights`.
+- **README sections:** *Tech stack*, *Security*, *Code of Conduct*,
+  centered header with aligned badges, and license copyright.
+- **`engines.node: ">=26.0.0"`** in `package.json` and a
+  `workspaces: ["web"]` field. New convenience scripts `web:dev`,
+  `web:build`, and `web:start` proxy into the workspace.
+- **`.gitignore` entries** for the web workspace: `.next/`, `out/`,
+  `next-env.d.ts`, `.turbo/`.
 
 ### Changed
 
-- Bump dev-dependency group to current latest:
+- **README is rewritten** in the convexfolio skeleton (with the
+  technical depth kept as a second half) and the GitHub URL is
+  updated to `sachncs/traceprojector` in every badge.
+- **CONTRIBUTING and SECURITY** are updated to use the public class
+  name `Projector` and the package name `traceprojector` (no more
+  `TraceProjector` or `Bcdtpp`).
+- **Docs** (`docs/architecture.md`, `docs/development.md`,
+  `docs/exceptions.md`, `docs/math.md`, `docs/setup.md`,
+  `docs/testing.md`) are updated to reflect the new source path, the
+  new error class names, the new requirement of Node 26, the new
+  test files, and the new `web/` workflow.
+- **`docs/api.md` is regenerated** via `npm run docs` to include
+  the `bweight` and `surface` exports and the Section 6.3
+  boundary-weight cascade.
+- **Bump dev-dependency group to current latest:**
   - `@rollup/plugin-node-resolve` `^16.0.1` → `^16.0.3`
   - `jsdoc-to-markdown` `^9.1.1` → `^9.1.3`
   - `mocha` `^11.8.0` → `^12.0.0`
   - The rest of the dev deps (`@rollup/plugin-commonjs`,
     `@rollup/plugin-terser`, `rollup`, `c8`, `chai`, `sinon`,
     `standard`) were already at latest.
-- Bump GitHub Actions: `actions/checkout` and `actions/setup-node`
-  to `v8`.
-- Tighten the StandardJS `ignore` list to also skip `web/` (the
+- **Bump GitHub Actions:** `actions/checkout` and
+  `actions/setup-node` to `v8`.
+- **Tighten the StandardJS `ignore` list** to also skip `web/` (the
   playground is type-checked with `tsc` and linted with `next lint`
   rather than StandardJS).
+- **Section 6.3 tent `μ` fix** (line 1559 / eq. 6.21): `μ` is `1` at
+  each face barycenter and `0` on every face boundary (edges /
+  vertices), piecewise affine on the Alfeld-split sub-triangles —
+  the globally-continuous paper definition — instead of the
+  reverse vertex-valued tent.
+- **Use the paper's `μ_σ = χ_{es_∂(σ)} μ`** (barycenter tent on the
+  boundary-extended star) in the vertex boundary weight
+  `ζ_{0,v}^0`, replacing the vertex tent; the dual property
+  `(ζ, v^0, u) = u(v)` (eq. 6.25) is preserved.
+- **Enforce the mean-zero constraint in `Solver` with an exact
+  Lagrange-multiplier (bordered) solve** instead of row replacement,
+  so every stiffness row is honored.
+- **Use a single mesh-orientation normal flux for all H(div) faces
+  with Whitney-basis sign alignment**, giving a continuous normal
+  trace across interior faces.
+- **Fall back to the cell mean** (never a silent zero) when a
+  higher-order L² mass matrix solve is singular.
+- **Evaluate the H¹ boundary DoF exactly at the vertex `u(v)`** (eq.
+  6.25) instead of approximating the weighted surface integral.
+- **Use the exact edge DoF `∫_e u·t ds` on every H(curl) edge,**
+  interior included, instead of midpoint tangential sampling.
+- **Source files renamed to single-word names:** `math_utils` →
+  `utils`, `local_solver` → `solver`, `boundary_weight_computer` →
+  `weight`, `higher_order_projection` → `bubble`, `mesh_refinement`
+  → `refinement`, `mesh_generator` → `generator`, `point_locator` →
+  `locator`, `convergence_harness` → `harness`,
+  `projectors/*_projector` → `projectors/h1|hcurl|hdiv|l2`.
+- **Classes renamed to single words:** `TraceProjector` →
+  `Projector`, `H1Projector` → `H1`, `HcurlProjector` → `Hcurl`,
+  `HdivProjector` → `Hdiv`, `L2Projector` → `L2`,
+  `BoundaryWeightComputer` → `Weight`, `LocalSolver` → `Solver`,
+  `HigherOrderProjection` → `Bubble`, `MeshRefinement` →
+  `Refinement`, `PointLocator` → `Locator`, `MeshValidationError` →
+  `ValidateError`, `ProjectionError` → `ProjectError`,
+  `SingularMatrixError` → `SingularError`.
+- **Plain public member names for every field and method**; no
+  `#private` markers and no leading-underscore semi-private
+  prefixes.
+- **Package export subpaths renamed** (`./utils`, `./locator`) and
+  the `PointLocator` / `buildPointLocator` API to `Locator` /
+  `buildLocator`.
+- **Fix case-sensitivity bug in tests** importing
+  `traceProjector.js` (now `traceprojector.js`).
+- **Restructure README header** with centered layout and aligned
+  badges.
+- **Rename package from `bcdtpp` to `traceprojector`** (the public
+  class was `Bcdtpp` at the time, later renamed to `TraceProjector`,
+  and finally to `Projector`).
+- **Remove the obsolete `Weight.computeVertexWeights` Solver /
+  `nodeMap` route** and the now-dead `vertexBoundaryData` /
+  `Projector.vertexData` (the H¹ boundary DoF is exact `u(v)`).
+  Drop the unused `meshRefinement` constructor argument from
+  `Weight`, and drop the now-dead `Weight fault isolation` coverage
+  tests.
 
-### Added (prior entries)
+### Changed (BREAKING)
 
-- Add `Projector.verifyBoundaryWeights` (Option 1 of the Section 6.3 cascade as a checked cross-check, per the "verify, don't replace" decision): the exact boundary DoFs stay `u(v)`, `∫_e u·t`, `∫_f u·n` for any input, and each wired §6.3 weight functional is applied to its boundary simplex's canonical discrete trace basis field (P1 hat `λ_v`, Whitney 1-form `W_e`, face `RT_0`) to confirm it recovers the normalized DoF — see `src/lib/boundaryVerify.js` and `tests/weight.test.js`
-- Fix `Weight` vertex-weight assembly after an Alfeld/Worsey-Farin split: the mesh appends barycenter vertices, so `bweight.vertexWeight` now receives a compact, remapped local vertex set for each boundary star (the previous full-vertex pass produced a singular stiffness matrix after the split and silently skipped every vertex weight)
-- Add Tech Stack section to README
-- Add Security section to README
-- Add Code of Conduct section to README
-- Add centered header with aligned badges to README
-- Add license copyright to README
-
-### Changed
-
-- Restructure README header with centered layout and aligned badges
-- Rename package and public class from `bcdtpp`/`Bcdtpp` to `traceprojector`/`TraceProjector`
-- Enforce the mean-zero constraint in `LocalSolver` with an exact Lagrange-multiplier (bordered) solve instead of row replacement, so every stiffness row is honored
-- Use a single mesh-orientation normal flux for all H(div) faces with Whitney-basis sign alignment, giving a continuous normal trace across interior faces
-- Fall back to the cell mean (never a silent zero) when a higher-order L2 mass matrix solve is singular
-- Evaluate the H1 boundary DoF exactly at the vertex `u(v)` (eq. 6.25) instead of approximating the weighted surface integral
-- Use the exact edge DoF `∫_e u·t ds` on every H(curl) edge, interior included, instead of midpoint tangential sampling
-- Add Section 2.3 surface differential operators (`grad_Γ`, `curl_Γ`, `div_Γ`, `rot_Γ`) and the Section 6.3 barycenter tent `μ` on Alfeld-split faces
-- Fix the Section 6.3 tent `μ` (line 1559 / eq. 6.21) to be `1` at each face barycenter and `0` on every face boundary (edges/vertices), piecewise affine on the Alfeld-split sub-triangles — the globally-continuous paper definition — instead of the reverse vertex-valued tent
-- Use the paper's `μ_σ = χ_{es_∂(σ)} μ` (barycenter tent on the boundary extended star) in the vertex boundary weight `ζ_{0,v}^0`, replacing the vertex tent; the dual property `(ζ,v^0, u)=u(v)` (eq. 6.25) is preserved
-- Add the edge boundary weight `ζ_{0,e}^1` (Section 6.3.2) on the lowest-order surface `N_0` (Whitney 1-form) space: build the star's edge indexing, assemble the Whitney mass matrix, solve for `η_e^1 = M^{-1}d` from the intrinsic edge moments `d_k = ∫_e W_k·t_e`, and expose its duality functional `(ζ, u) = (η_e^1, u)` reproducing the edge degree of freedom for H(curl) traces in `N_0` (eq. 6.31)
-- Add the face boundary weight `ζ_{0,f}^2` (Section 6.3.3) on the lowest-order surface `RT_0` (Raviart-Thomas) space: assemble the RT_0 mass matrix over the extended star, solve for `η_f^2 = M^{-1}d` from the featured-face normal moments `d_k = ∫_f RT_k·n`, and expose its duality functional `(ζ, u) = (η_f^2, u)` reproducing the face degree of freedom for H(div) traces in `RT_0` (eq. 6.36)
-- Regenerate `docs/api.md` (via `npm run docs`) to include the `bweight` and `surface` exports, and document the Section 6.3 boundary-weight cascade in `docs/math.md`
-- Wire the Section 6.3 vertex/edge/face duality functionals into `Weight.compute()`: add `vertexBoundaryWeights`, `edgeBoundaryWeights`, and `faceBoundaryWeights` (built from `bweight.vertexWeight`/`edgeWeight`/`faceWeight` over each boundary vertex's star, edge's star, and face's extended star), and store them on `Projector` via `computeBoundaryWeights`
-- Remove the obsolete `Weight.computeVertexWeights` Solver/`nodeMap` route and the now-dead `vertexBoundaryData`/`Projector.vertexData` (the H1 boundary DoF is exact `u(v)`), drop the unused `meshRefinement` constructor argument from `Weight`, and drop the now-dead `Weight fault isolation` coverage tests
-
-### Changed (naming conventions)
-
-- Rename all source files to single-word names (`math_utils` → `utils`, `local_solver` → `solver`, `boundary_weight_computer` → `weight`, `higher_order_projection` → `bubble`, `mesh_refinement` → `refinement`, `mesh_generator` → `generator`, `point_locator` → `locator`, `convergence_harness` → `harness`, `projectors/*_projector` → `projectors/h1|hcurl|hdiv|l2`)
-- Rename all classes to single words (`TraceProjector` → `Projector`, `H1Projector` → `H1`, `HcurlProjector` → `Hcurl`, `HdivProjector` → `Hdiv`, `L2Projector` → `L2`, `BoundaryWeightComputer` → `Weight`, `LocalSolver` → `Solver`, `HigherOrderProjection` → `Bubble`, `MeshRefinement` → `Refinement`, `PointLocator` → `Locator`, `MeshValidationError` → `ValidateError`, `ProjectionError` → `ProjectError`, `SingularMatrixError` → `SingularError`)
-- Use plain public member names for every field and method; no `#private` markers and no leading-underscore semi-private prefixes
-- Rename package export subpaths (`./utils`, `./locator`) and the `PointLocator`/`buildPointLocator` API to `Locator`/`buildLocator`
-- Fix case-sensitivity bug in tests importing `traceProjector.js` (now `traceprojector.js`)
+- **Source tree moved from `src/lib/` to `traceprojector/`.** The
+  `src/` wrapper is gone — the package now ships with the source
+  living in a top-level `traceprojector/` directory, so the package
+  name and the directory name match exactly and the layout is
+  obvious from the repo root. `package.json` (`main`, `module`,
+  `unpkg`, `jsdelivr`, every `exports.*`, `types`, `files`), the
+  `docs` script glob, the rollup `input`, the `architecture.md`
+  module map, the `math.md` cross-references, the
+  `setup.md` / `testing.md` / `development.md` examples, the
+  README, and every `tests/*.test.js` import are updated. The
+  internal layout of the package is preserved, so relative imports
+  inside the package still resolve.
+- **Babel is removed from the build pipeline.** `@babel/core`,
+  `@babel/preset-env`, `@rollup/plugin-babel`, and
+  `babel.config.json` are deleted: the project is pure ESM and only
+  ever runs on Node 26+, so the Babel pass was a no-op.
+- **Pin to Node 26.** The CI matrix is reduced from `[20, 22]` to a
+  single Node 26 job, and the `publish.yml` workflow is updated
+  accordingly. `docs/setup.md` requirements are bumped to Node 26,
+  npm 11. A new `web` CI job compiles the Next.js playground.
+- **Repository URL** is updated to
+  `https://github.com/sachncs/traceprojector` in `package.json`
+  (`homepage`, `repository.url`, `bugs.url`), every README badge,
+  the CI workflow URLs (implicit), and the `docs/setup.md`
+  install instructions. The historical commit links in the
+  changelog still point at the original
+  `bounded-commuting-discrete-trace-preserving-projections` repo
+  because they reference real past commits.
+- **Error class names in docs:** `MeshValidationError` →
+  `ValidateError`, `ProjectionError` → `ProjectError`,
+  `SingularMatrixError` → `SingularError` (the class names in
+  source were already renamed earlier in this release; this just
+  brings the docs in line).
 
 ## [0.0.7](https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/commit/e9b643c) — 2026-06-20
 
@@ -136,7 +213,7 @@ All notable changes to this project will be documented in this file.
 - Add MeshRefinement class for Alfeld/Worsey-Farin splits
 - Fix orientation sign computation for edges and faces
 - Fix tetDeterminant (scalar triple product) and add tetVolume
-- Refactor projectors into separate files under src/lib/projectors/
+- Refactor projectors into separate files under `src/lib/projectors/`
 
 ## [0.0.5](https://github.com/sachncs/bounded-commuting-discrete-trace-preserving-projections/commit/8daf318) — 2026-05-12
 

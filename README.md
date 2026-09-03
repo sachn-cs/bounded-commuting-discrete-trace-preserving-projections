@@ -11,6 +11,9 @@
     <a href="https://standardjs.com/"><img src="https://img.shields.io/badge/code%20style-standard-brightgreen.svg" alt="StandardJS"></a>
     <a href="https://github.com/bcoe/c8"><img src="https://img.shields.io/badge/coverage-c8-yellow" alt="c8"></a>
   </p>
+  <p align="center">
+    <a href="https://github.com/sachncs/traceprojector/blob/master/CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-0.1.0-blue" alt="Changelog"></a>
+  </p>
 </p>
 
 ---
@@ -37,6 +40,23 @@ It implements the construction from
 > **Disclaimer:** I am not an author of the paper above. This
 > repository is an independent JavaScript implementation of the
 > algorithm described in that work.
+
+---
+
+## What's new in 0.1.0
+
+- **Node 26 only.** Dropped Babel, dropped Node 20/22 from the
+  matrix, bumped every dev dep to current latest.
+- **New file layout.** The package now ships from a top-level
+  `traceprojector/` directory — no more `src/lib/` wrapper.
+- **New `web/` playground.** A Next.js 16 + shadcn/ui app that
+  consumes the lib via npm workspaces. 3D mesh viewer, API
+  playground with code export, convergence plot. See
+  [Option 2 below](#option-2--try-it-online-no-install).
+- **Rebrand complete.** Repository, badges, docs, error class
+  names — everything is `sachncs/traceprojector` and `Projector`.
+  See the [0.1.0 changelog entry](CHANGELOG.md#010--2026-09-03) for
+  the full list.
 
 ---
 
